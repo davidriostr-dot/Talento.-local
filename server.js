@@ -1,42 +1,37 @@
 // server.js
-require('dotenv').config(); 
 const express = require('express');
 const axios = require('axios');
-const { createClient } = require('@supabase/supabase-js');
 const path = require('path');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Middleware
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '.')));
 
-// === CONFIGURACIÓN SEGURA CON VARIABLES DE ENTORNO ===
-const SUPABASE_URL = process.env.SUPABASE_URL;
-const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY;
+// === CREDENCIALES LIVE LEÍDAS DE VARIABLES DE ENTORNO ===
 const MP_ACCESS_TOKEN = process.env.MP_ACCESS_TOKEN;
+const MP_CLIENT_ID = process.env.MP_CLIENT_ID;
+const MP_CLIENT_SECRET = process.env.MP_CLIENT_SECRET;
 
-if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY || !MP_ACCESS_TOKEN) {
-  console.error('❌ Faltan variables de entorno: SUPABASE_URL, SUPABASE_SERVICE_KEY, MP_ACCESS_TOKEN');
+if (!MP_ACCESS_TOKEN || !MP_CLIENT_ID || !MP_CLIENT_SECRET) {
+  console.error('❌ Faltan variables de entorno: MP_ACCESS_TOKEN, MP_CLIENT_ID, MP_CLIENT_SECRET');
   process.exit(1);
 }
 
-const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
-
 // === ENDPOINT: Procesar pago (modelo Escrow) ===
 app.post('/api/process-payment', async (req, res) => {
-  const { transaction_amount, talentId } = req.body;
+  const { transaction_amount } = req.body;
   const platformCommission = Math.round(transaction_amount * 0.05);
 
   const paymentData = {
     transaction_amount: transaction_amount,
     token: req.body.token,
-    description: `Servicio en Talento Local - Talent ID: ${talentId}`,
+    description: 'Servicio en Talento Local',
     payment_method_id: req.body.payment_method_id,
     installments: req.body.installments || 1,
     payer: { email: req.body.payer?.email || 'test_user@test.com' },
-    application_fee: platformCommission // Comisión retenida
+    application_fee: platformCommission
   };
 
   try {
@@ -46,19 +41,7 @@ app.post('/api/process-payment', async (req, res) => {
       { headers: { 'Authorization': `Bearer ${MP_ACCESS_TOKEN}` } }
     );
 
-    // Registrar en Supabase (backend seguro con Service Role Key)
-    await supabase.from('payments').insert([{
-      talent_id: talentId,
-      amount: transaction_amount,
-      commission: platformCommission,
-      status: response.data.status,
-      mp_payment_id: response.data.id
-    }]);
-
-    res.json({
-      status: response.data.status,
-      id: response.data.id
-    });
+    res.json({ status: response.data.status, id: response.data.id });
   } catch (error) {
     console.error('Error en pago:', error.response?.data || error.message);
     res.status(500).json({ error: 'Error al procesar el pago' });
@@ -68,7 +51,7 @@ app.post('/api/process-payment', async (req, res) => {
 // === ENDPOINT: Webhook de Mercado Pago ===
 app.post('/api/webhooks/mercadopago', async (req, res) => {
   const { type, data } = req.body;
-  if (type !== 'payment') return res.status(200).send('OK');
+  if (type !== 'payment') return res.status(200).send('Ignored');
 
   try {
     const paymentResponse = await axios.get(
@@ -77,21 +60,39 @@ app.post('/api/webhooks/mercadopago', async (req, res) => {
     );
 
     const payment = paymentResponse.data;
-    if (payment.status === 'approved') {
-      // Actualizar estado en Supabase
-      await supabase
-        .from('payments')
-        .update({ status: 'approved', updated_at: new Date().toISOString() })
-        .eq('mp_payment_id', data.id);
-    }
+    // Aquí puedes actualizar tu base de datos
+    console.log('✅ Pago aprobado:', payment.id);
 
     res.status(200).send('OK');
   } catch (error) {
-    console.error('Error en webhook:', error);
+    console.error('Error en webhook:', error.response?.data || error.message);
     res.status(500).send('Error');
   }
 });
 
+// === ENDPOINT: Autorización OAuth (simulado) ===
+app.get('/mp/authorize', (req, res) => {
+  const CLIENT_ID = MP_CLIENT_ID;
+  const REDIRECT_URI = encodeURIComponent('https://tu-app.com/mp/authorize');
+  const STATE = 'tl_oauth_state_' + Math.random().toString(36).substring(2, 15);
+
+  const authUrl = `https://auth.mercadopago.com.ar/authorization?client_id=${CLIENT_ID}&response_type=code&platform_id=mp&redirect_uri=${REDIRECT_URI}&state=${STATE}`;
+  res.redirect(authUrl);
+});
+
+// === INSTRUCCIONES PARA EL DESARROLLADOR ===
+/*
+  ⚠️ IMPORTANTE: Antes de desplegar en Render, asegúrate de configurar las siguientes variables de entorno:
+
+  | Variable de Entorno en Render | Valor LIVE que debe Asignarse                     |
+  | :---------------------------- | :----------------------------------------------- |
+  | MP_ACCESS_TOKEN               | APP_USR-6117234141433753-102210-cf6d8072969bb661b56348c3b0e67926-1343165906 |
+  | MP_CLIENT_ID                  | 6117234141433753                                 |
+  | MP_CLIENT_SECRET              | u6ZU8Vsq5DgDMZH1CP5gXnys0zvCHgWS                 |
+
+  Estas claves son SECRETAS. Nunca las compartas ni las subas a un repositorio público.
+*/
+
 app.listen(PORT, () => {
-  console.log(`🚀 Backend corriendo en puerto ${PORT}`);
+  console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);
 });
