@@ -7,10 +7,11 @@
   <!-- OpenLayers CSS -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ol@v7.4.0/ol.css">
   <script src="https://cdn.jsdelivr.net/npm/ol@v7.4.0/dist/ol.js"></script>
-  <!-- Supabase -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <!-- Mercado Pago SDK -->
-  <script src="https://sdk.mercadopago.com/js/v2"></script>
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
   <style>
     :root {
       --primary: #0f172a;
@@ -103,6 +104,49 @@
       background: var(--secondary);
       border: none;
       box-shadow: 0 4px 12px rgba(14, 165, 233, 0.4);
+    }
+    .user-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: var(--secondary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: bold;
+      font-size: 1.2rem;
+      box-shadow: 0 4px 12px rgba(14, 165, 233, 0.3);
+      cursor: pointer;
+    }
+    .user-dropdown {
+      position: absolute;
+      top: 100px;
+      right: 32px;
+      background: white;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-lg);
+      border: 1px solid var(--gray-200);
+      width: 280px;
+      z-index: 1000;
+      display: none;
+    }
+    .user-dropdown a {
+      display: block;
+      padding: 14px 20px;
+      text-decoration: none;
+      color: var(--gray-800);
+      font-weight: 600;
+      transition: var(--transition);
+    }
+    .user-dropdown a:hover {
+      background: var(--gray-100);
+    }
+    .dropdown-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--gray-200);
+      font-weight: 700;
+      color: var(--primary-dark);
     }
     .view {
       display: none;
@@ -255,7 +299,8 @@
     }
     .form-group input,
     .form-group select,
-    .form-group textarea {
+    .form-group textarea,
+    .form-group video {
       width: 100%;
       padding: 16px;
       border: 2px solid var(--gray-200);
@@ -437,23 +482,6 @@
       backdrop-filter: blur(10px);
       background: rgba(255,255,255,0.1);
     }
-    #payment-brick-container {
-      width: 100%;
-      max-width: 600px;
-      margin: 40px auto;
-      padding: 32px;
-      background: white;
-      border-radius: var(--radius);
-      box-shadow: var(--shadow-lg);
-      border: 1px solid rgba(0,0,0,0.05);
-    }
-    .price-display {
-      text-align: center;
-      font-size: 1.4rem;
-      font-weight: 700;
-      margin-bottom: 24px;
-      color: var(--gray-800);
-    }
     @media (max-width: 900px) {
       header {
         flex-direction: column;
@@ -488,15 +516,18 @@
         <div class="logo-icon">TL</div>
         Talento<span style="background: linear-gradient(135deg, var(--secondary) 0%, var(--accent) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Local</span>
       </div>
-      <nav>
-        <ul>
-          <li><a href="#" id="nav-home" class="nav-link active">Plataforma</a></li>
-          <li><a href="#" id="nav-talents" class="nav-link">Talentos</a></li>
-          <li><a href="#" id="nav-register" class="nav-link">Unirse</a></li>
-          <li><a href="#" id="nav-profile" class="nav-link" style="display: none;">Mi Perfil</a></li>
-          <li><a href="#" id="nav-login" class="nav-link">Iniciar Sesión</a></li>
-        </ul>
-      </nav>
+      <div style="display: flex; align-items: center; gap: 24px;">
+        <nav>
+          <ul>
+            <li><a href="#" id="nav-home" class="nav-link active">Plataforma</a></li>
+            <li><a href="#" id="nav-talents" class="nav-link">Talentos</a></li>
+            <li><a href="#" id="nav-products" class="nav-link">Productos</a></li>
+            <li><a href="#" id="nav-register" class="nav-link">Unirse</a></li>
+          </ul>
+        </nav>
+        <div class="user-icon" id="user-icon">👤</div>
+        <div class="user-dropdown" id="user-dropdown"></div>
+      </div>
     </header>
 
     <!-- Home View -->
@@ -558,23 +589,21 @@
         <input type="text" id="talents-search" placeholder="Buscar talentos por nombre, profesión o ubicación...">
       </div>
       <div id="talents-list" class="products-grid">
-        <div class="product-card">
-          <div class="product-image">Foto</div>
-          <h4>Ana López</h4>
-          <p>Diseñadora Gráfica Premium</p>
-          <div class="form-group">
-            <label>Modalidad:</label>
-            <select class="payment-mode" data-hourly="500" data-weekly="2000" data-biweekly="3500" data-monthly="6000">
-              <option value="hourly">Por hora - $500 ARS</option>
-              <option value="weekly">Por semana - $2.000 ARS</option>
-              <option value="biweekly">Por quincena - $3.500 ARS</option>
-              <option value="monthly">Por mes - $6.000 ARS</option>
-            </select>
-          </div>
-          <div class="product-actions">
-            <button class="btn btn-outline hire-btn" data-name="Ana López" data-id="1">Contratar</button>
-          </div>
-        </div>
+        <!-- Talents will be loaded here -->
+      </div>
+    </div>
+
+    <!-- Products View -->
+    <div id="products-view" class="view">
+      <div class="hero">
+        <h1>Productos de Talentos Certificados</h1>
+        <p>Adquiera herramientas, diseños, cursos y más creados por profesionales locales.</p>
+      </div>
+      <div class="search-bar">
+        <input type="text" id="products-search" placeholder="Buscar productos...">
+      </div>
+      <div id="products-list" class="products-grid">
+        <!-- Products will be loaded here -->
       </div>
     </div>
 
@@ -591,10 +620,6 @@
             <input type="text" id="fullName" required>
           </div>
           <div class="form-group">
-            <label for="email">Correo Profesional *</label>
-            <input type="email" id="email" required>
-          </div>
-          <div class="form-group">
             <label for="profession">Especialidad Profesional *</label>
             <select id="profession" required>
               <option value="">Seleccione su especialidad</option>
@@ -607,6 +632,14 @@
               <option value="fotografo">Fotografía Profesional</option>
               <option value="otros">Otra Especialidad</option>
             </select>
+          </div>
+          <div class="form-group">
+            <label for="phone">Teléfono Corporativo *</label>
+            <input type="tel" id="phone" required>
+          </div>
+          <div class="form-group">
+            <label for="email">Correo Profesional *</label>
+            <input type="email" id="email" required>
           </div>
           <div class="legal-notice">
             <strong>CLÁUSULA DE LIMITACIÓN DE RESPONSABILIDAD:</strong> Talento Local actúa únicamente como intermediario entre profesionales y clientes. No asume responsabilidad por la calidad, legalidad o cumplimiento de los servicios o productos ofrecidos por los usuarios de la plataforma.
@@ -671,11 +704,43 @@
             <label for="profileDescription">Perfil Profesional</label>
             <textarea id="profileDescription" rows="4"></textarea>
           </div>
+          <div class="form-group">
+            <label>Subir video de demostración (máx. 60s)</label>
+            <input type="file" id="video-upload" accept="video/*" style="margin-top: 12px;">
+            <p style="font-size: 0.9rem; color: var(--gray-600); margin-top: 8px;">
+              Muestra en un video corto tu proceso de trabajo, resultados o servicios.
+            </p>
+          </div>
+          <div class="form-group">
+            <label>Promoción Destacada</label>
+            <div class="boost-section">
+              <p><strong>Estado actual:</strong> <span id="boost-status">No activo</span></p>
+              <div class="boost-options">
+                <button type="button" class="btn btn-outline" id="boost-7">7 días - $29.99</button>
+                <button type="button" class="btn btn-outline" id="boost-30">30 días - $99.99</button>
+              </div>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Analítica Premium</label>
+            <div class="analytics-section">
+              <p><strong>Vistas en los últimos 30 días:</strong> <span id="analytics-views">0</span></p>
+              <p><strong>Mensajes recibidos:</strong> <span id="analytics-messages">0</span></p>
+            </div>
+          </div>
           <div class="form-actions">
             <button type="submit" class="btn">Guardar Cambios</button>
             <button type="button" class="btn btn-outline" id="logout-btn">Cerrar Sesión</button>
           </div>
         </form>
+      </div>
+      <h3 style="margin: 48px 0 24px; text-align: center;">Mis Productos</h3>
+      <div id="my-products-list" class="products-grid">
+        <!-- User's products will be loaded here -->
+      </div>
+      <h3 style="margin: 48px 0 24px; text-align: center;">Mis Videos</h3>
+      <div id="videos-list" class="products-grid" style="margin-top: 24px;">
+        <!-- Videos will be loaded here -->
       </div>
     </div>
 
@@ -703,16 +768,36 @@
       </div>
     </div>
 
-    <!-- Payment View -->
-    <div id="payment-view" class="view">
-      <div class="hero">
-        <h1>Contratar a <span id="hire-name">[Nombre]</span></h1>
-        <p>Finalice el pago para comenzar la colaboración.</p>
+    <!-- Chat View -->
+    <div id="chat-view" class="view">
+      <div class="chat-header">
+        <button class="btn btn-outline" id="back-to-talents">← Volver</button>
+        <h2 id="chat-title">Chat con [Nombre del Talento]</h2>
       </div>
-      <div class="price-display" id="payment-amount">Total: $0,00 ARS</div>
-      <div id="payment-brick-container"></div>
-      <div style="text-align: center; margin-top: 24px;">
-        <button class="btn btn-outline" id="back-to-talents-btn">← Volver</button>
+      <div id="chat-messages" class="chat-messages">
+        <!-- Messages will be loaded here -->
+      </div>
+      <div class="chat-input">
+        <input type="text" id="message-input" placeholder="Escribe tu mensaje...">
+        <button class="btn" id="send-message-btn">Enviar</button>
+      </div>
+    </div>
+
+    <!-- About View -->
+    <div id="about-view" class="view">
+      <div class="hero">
+        <h1>Sobre Talento Local</h1>
+        <p>Líder indiscutido en la conexión de talento profesional con oportunidades de alto valor.</p>
+      </div>
+      <div style="background: linear-gradient(135deg, white 0%, #f8fafc 100%); padding: 40px; border-radius: var(--radius); box-shadow: var(--shadow-lg); border: 1px solid rgba(0,0,0,0.05);">
+        <p style="font-size: 1.2rem; color: var(--gray-600); margin-bottom: 24px; line-height: 1.8;">
+          <strong>Talento Local</strong> es la plataforma de referencia nacional para profesionales independientes y empresas que buscan excelencia en servicios y productos. 
+          Fundada con la misión de elevar el estándar del trabajo profesional en el país, hemos construido un ecosistema donde el talento se encuentra con las mejores oportunidades.
+        </p>
+        <p style="font-size: 1.2rem; color: var(--gray-600); line-height: 1.8;">
+          Nuestra tecnología de geolocalización inteligente, combinada con un riguroso proceso de verificación, garantiza que cada conexión sea de la más alta calidad, 
+          posicionándonos como la empresa líder en nuestro sector a nivel nacional.
+        </p>
       </div>
     </div>
 
@@ -723,14 +808,25 @@
 
   <script>
     // ========================================
-    // CONFIGURACIÓN DE SUPABASE (FRONTEND)
+    // CONFIGURACIÓN DE FIREBASE
     // ========================================
-    const supabaseUrl = 'https://ljdiegwftzabitbqhsfw.supabase.co';
-    const supabaseAnonKey = 'TU_CLAVE_PUBLISHABLE_DE_SUPABASE'; // ← Reemplazar con la Anon Key real en Vercel
-    const supabase = window.supabase.createClient(supabaseUrl, supabaseAnonKey);
-
-    // Mercado Pago (frontend solo usa public key)
-    const mp = new MercadoPago('TEST-636dd0d3-ca77-45c3-9b9e-1fbbe5157fd4');
+    const firebaseConfig = {
+      apiKey: 'YOUR_API_KEY_HERE',
+      authDomain: 'your-project.firebaseapp.com',
+      projectId: 'your-project',
+      storageBucket: 'your-project.appspot.com',
+      messagingSenderId: '123456789',
+      appId: '1:123456789:web:abcdef123456789'
+    };
+    let db, auth, storage;
+    try {
+      firebase.initializeApp(firebaseConfig);
+      db = firebase.firestore();
+      auth = firebase.auth();
+      storage = firebase.storage();
+    } catch (error) {
+      console.warn('Firebase not initialized:', error);
+    }
 
     // Global state
     let mapData = { location: null, radius: 0 };
@@ -741,10 +837,76 @@
     let vectorSource = null;
     let currentRadius = 0;
     let currentUser = null;
-    let selectedHire = null;
-    let paymentInitialized = false;
 
-    // =============== MAP ===============
+    // =============== SIMULACIÓN DE ROL DE USUARIO ===============
+    let userState = {
+      isLoggedIn: false,
+      role: null // 'cliente' o 'talento'
+    };
+
+    function simulateLogin(role) {
+      userState.isLoggedIn = true;
+      userState.role = role;
+      renderUserDropdown();
+      updateUIBasedOnAuthState({ uid: 'simulated' });
+    }
+
+    function simulateLogout() {
+      userState.isLoggedIn = false;
+      userState.role = null;
+      renderUserDropdown();
+      updateUIBasedOnAuthState(null);
+    }
+
+    // =============== RENDER MENÚ DINÁMICO ===============
+    function renderUserDropdown() {
+      const dropdown = document.getElementById('user-dropdown');
+      if (!dropdown) return;
+
+      if (!userState.isLoggedIn) {
+        dropdown.innerHTML = `
+          <div class="dropdown-header">¡Bienvenido!</div>
+          <a href="#" onclick="simulateLogin('cliente'); return false;">Iniciar Sesión</a>
+          <a href="#" onclick="navigateTo('register'); return false;">Crear Cuenta (Cliente)</a>
+          <a href="#" onclick="navigateTo('register'); return false;">Quiero ser Talento</a>
+        `;
+      } else if (userState.role === 'cliente') {
+        dropdown.innerHTML = `
+          <div class="dropdown-header">Cliente</div>
+          <a href="#" onclick="navigateTo('profile'); return false;">Mi Perfil</a>
+          <a href="#">Mis Reservas</a>
+          <a href="#">Mis Compras</a>
+          <a href="#" onclick="simulateLogout(); return false;">Cerrar Sesión</a>
+        `;
+      } else if (userState.role === 'talento') {
+        dropdown.innerHTML = `
+          <div class="dropdown-header">Talento</div>
+          <a href="#">Dashboard</a>
+          <a href="#">Mi Agenda / Servicios</a>
+          <a href="#" onclick="navigateTo('products'); return false;">Mi Catálogo de Productos</a>
+          <a href="#" onclick="navigateTo('profile'); document.querySelector('#liquidation-box')?.scrollIntoView(); return false;">💰 Mis Finanzas (Escrow)</a>
+          <a href="#" onclick="navigateTo('home'); return false;">Ajustes de Perfil</a>
+          <a href="#" onclick="simulateLogout(); return false;">Cerrar Sesión</a>
+        `;
+      }
+
+      dropdown.style.display = 'block';
+    }
+
+    // =============== TOGGLE MENÚ ===============
+    document.getElementById('user-icon')?.addEventListener('click', function(e) {
+      e.stopPropagation();
+      const dropdown = document.getElementById('user-dropdown');
+      dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
+    });
+
+    document.addEventListener('click', function(e) {
+      if (!e.target.closest('.user-icon') && !e.target.closest('.user-dropdown')) {
+        document.getElementById('user-dropdown').style.display = 'none';
+      }
+    });
+
+    // =============== MAP FUNCTIONS ===============
     function initializeMap() {
       if (mapInitialized) return;
       vectorSource = new ol.source.Vector();
@@ -864,35 +1026,7 @@
       mapData.radius = currentRadius;
     }
 
-    // =============== AUTH FUNCTIONS ===============
-    async function login(email, password) {
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) throw error;
-      currentUser = data.user;
-      return data.user;
-    }
-
-    async function register(email, password) {
-      const { data, error } = await supabase.auth.signUp({ email, password });
-      if (error) throw error;
-      currentUser = data.user;
-      return data.user;
-    }
-
-    function logout() {
-      supabase.auth.signOut().then(() => {
-        currentUser = null;
-        updateUIBasedOnAuthState(null);
-        navigateTo('home');
-      });
-    }
-
-    supabase.auth.onAuthStateChange((event, session) => {
-      currentUser = session?.user || null;
-      updateUIBasedOnAuthState(currentUser);
-    });
-
-    // =============== UI FUNCTIONS ===============
+    // =============== AUTH & UI ===============
     function navigateTo(viewName) {
       document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
       document.getElementById(`${viewName}-view`)?.classList.add('active');
@@ -913,71 +1047,6 @@
       }
     }
 
-    // =============== PAYMENT BRICK ===============
-    async function initializePaymentBrick() {
-      if (!selectedHire) return;
-      const amount = selectedHire.amount;
-      const priceFormatted = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(amount);
-      document.getElementById('payment-amount').textContent = `Total: ${priceFormatted}`;
-
-      const settings = {
-        initialization: {
-          amount: amount,
-          country: 'ARG',
-          locale: 'es-AR'
-        },
-        customization: {
-          paymentMethods: {
-            creditCard: 'all',
-            debitCard: 'all',
-            ticket: 'all',
-            bankTransfer: 'all',
-            mercadoPago: 'all'
-          }
-        },
-        callbacks: {
-          onReady: () => console.log('Brick listo'),
-          onSubmit: async (formData) => {
-            try {
-              const response = await fetch('/api/process-payment', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ ...formData, transaction_amount: amount, talentId: selectedHire.id })
-              });
-              const result = await response.json();
-              if (result.status === 'approved') {
-                alert('¡Pago aprobado!');
-                navigateTo('home');
-              } else {
-                alert('Pago rechazado.');
-              }
-            } catch (error) {
-              console.error('Error:', error);
-              alert('Error al procesar el pago.');
-            }
-          },
-          onError: (error) => console.error('Error en Brick:', error)
-        }
-      };
-
-      const bricksBuilder = mp.bricks();
-      const container = document.getElementById('payment-brick-container');
-      container.innerHTML = '';
-      await bricksBuilder.create('payment', 'payment-brick-container', settings);
-    }
-
-    const observer = new MutationObserver(() => {
-      if (document.getElementById('payment-view')?.classList.contains('active')) {
-        if (!paymentInitialized) {
-          initializePaymentBrick();
-          paymentInitialized = true;
-        }
-      } else {
-        paymentInitialized = false;
-      }
-    });
-    observer.observe(document.body, { childList: true, subtree: true });
-
     // =============== EVENT LISTENERS ===============
     document.addEventListener('DOMContentLoaded', () => {
       initializeMap();
@@ -995,83 +1064,23 @@
       document.getElementById('decreaseRadius')?.addEventListener('click', () => adjustRadius(-200));
       document.getElementById('increaseRadius')?.addEventListener('click', () => adjustRadius(200));
 
-      // Contratar
-      document.addEventListener('click', function(e) {
-        if (e.target.classList.contains('hire-btn')) {
-          const card = e.target.closest('.product-card');
-          const select = card.querySelector('.payment-mode');
-          const mode = select.value;
-          const rates = {
-            hourly: parseFloat(select.dataset.hourly),
-            weekly: parseFloat(select.dataset.weekly),
-            biweekly: parseFloat(select.dataset.biweekly),
-            monthly: parseFloat(select.dataset.monthly)
-          };
-          const amount = rates[mode] || 0;
-          selectedHire = {
-            name: e.target.dataset.name,
-            id: e.target.dataset.id,
-            amount,
-            mode
-          };
-          document.getElementById('hire-name').textContent = selectedHire.name;
-          document.getElementById('payment-amount').textContent = `Total: ${new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(amount)}`;
-          navigateTo('payment');
-        }
-      });
-
-      // Volver
-      document.getElementById('back-to-talents-btn')?.addEventListener('click', () => navigateTo('talents'));
+      // Buttons
       document.getElementById('define-location-btn')?.addEventListener('click', () => navigateTo('home'));
       document.getElementById('create-account-btn')?.addEventListener('click', () => navigateTo('register'));
-      document.getElementById('logout-btn')?.addEventListener('click', () => logout());
+      document.getElementById('logout-btn')?.addEventListener('click', () => simulateLogout());
+      document.getElementById('back-to-talents')?.addEventListener('click', () => navigateTo('talents'));
 
       // Cláusula legal
-      document.getElementById('talentForm')?.addEventListener('submit', async function(e) {
-        e.preventDefault();
-        if (!document.getElementById('accept-terms').checked) {
+      document.getElementById('talentForm')?.addEventListener('submit', function(e) {
+        if (!document.getElementById('accept-terms')?.checked) {
+          e.preventDefault();
           alert('Debe aceptar la cláusula de responsabilidad.');
-          return;
-        }
-        if (!mapData.location) {
-          alert('Por favor, defina su ubicación en el mapa antes de registrar.');
-          return;
-        }
-        const formData = new FormData(this);
-        const talentData = {
-          fullName: formData.get('fullName'),
-          email: formData.get('email'),
-          profession: formData.get('profession'),
-          location: {
-            lat: ol.proj.toLonLat(mapData.location)[1],
-            lng: ol.proj.toLonLat(mapData.location)[0]
-          },
-          radius: mapData.radius
-        };
-        try {
-          const userId = currentUser ? currentUser.id : 'anonymous';
-          const { data, error } = await supabase.from('talents').insert([talentData]);
-          if (error) throw error;
-          alert('¡Perfil registrado exitosamente!');
-        } catch (error) {
-          console.error('Error:', error);
-          alert('Error al registrar el perfil.');
-        }
-      });
-
-      // Login
-      document.getElementById('loginForm')?.addEventListener('submit', async function(e) {
-        e.preventDefault();
-        const email = document.getElementById('loginEmail').value;
-        const password = document.getElementById('loginPassword').value;
-        try {
-          await login(email, password);
-          navigateTo('profile');
-        } catch (error) {
-          alert('Error: ' + error.message);
         }
       });
     });
+
+    // =============== INTEGRACIÓN CON PAYMENTS ===============
+    // (Código de Mercado Pago se añadirá en la pestaña de pago)
   </script>
 </body>
 </html>
