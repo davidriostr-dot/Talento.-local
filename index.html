@@ -50,7 +50,7 @@
       margin: 0 auto;
       padding: 0 32px;
     }
-    /* Header & Navigation - ESTILOS ACTUALIZADOS */
+    /* Header & Navigation */
     header {
       display: flex;
       justify-content: space-between;
@@ -109,7 +109,6 @@
       border: none;
       box-shadow: 0 4px 12px rgba(14, 165, 233, 0.4);
     }
-    /* Views */
     .view {
       display: none;
     }
@@ -121,7 +120,6 @@
       from { opacity: 0; transform: translateY(16px); }
       to { opacity: 1; transform: translateY(0); }
     }
-    /* Hero Section */
     .hero {
       text-align: center;
       margin-bottom: 56px;
@@ -146,7 +144,6 @@
       margin-bottom: 32px;
       font-weight: 500;
     }
-    /* Search Bar */
     .search-bar {
       max-width: 700px;
       margin: 0 auto 40px;
@@ -165,7 +162,6 @@
       border-color: var(--secondary);
       box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.15);
     }
-    /* Map Section */
     #map {
       width: 100%;
       height: 650px;
@@ -175,7 +171,6 @@
       border: 1px solid rgba(255,255,255,0.5);
       backdrop-filter: blur(10px);
     }
-    /* Radio display */
     .radio-display {
       position: absolute;
       top: 32px;
@@ -214,7 +209,6 @@
       margin-bottom: 12px;
       font-size: 1.05rem;
     }
-    /* Controls */
     .map-controls {
       display: flex;
       gap: 16px;
@@ -245,7 +239,6 @@
       transform: none;
       box-shadow: none;
     }
-    /* Form Styles */
     .form-container {
       background: linear-gradient(135deg, white 0%, #f8fafc 100%);
       padding: 40px;
@@ -347,7 +340,6 @@
       margin: 8px 0;
       font-weight: 600;
     }
-    /* Product Grid */
     .products-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
@@ -411,7 +403,6 @@
       display: flex;
       gap: 12px;
     }
-    /* Stats Section */
     .stats {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
@@ -448,8 +439,6 @@
       color: var(--gray-600);
       font-size: 1.1rem;
       border-top: 1px solid rgba(255,255,255,0.3);
-      backdrop-filter: blur(10px);
-      background: rgba(255,255,255,0.1);
     }
     #payment-brick-container {
       width: 100%;
@@ -511,7 +500,6 @@
         <ul>
           <li><a href="#" id="nav-home" class="nav-link active">Plataforma</a></li>
           <li><a href="#" id="nav-talents" class="nav-link">Talentos</a></li>
-          <li><a href="#" id="nav-products" class="nav-link">Productos</a></li>
           <li><a href="#" id="nav-register" class="nav-link">Unirse</a></li>
           <li><a href="#" id="nav-profile" class="nav-link" style="display: none;">Mi Perfil</a></li>
           <li><a href="#" id="nav-login" class="nav-link">Iniciar Sesión</a></li>
@@ -599,30 +587,6 @@
       </div>
     </div>
 
-    <!-- Products View -->
-    <div id="products-view" class="view">
-      <div class="hero">
-        <h1>Productos de Talentos Certificados</h1>
-        <p>Adquiera herramientas, diseños, cursos y más creados por profesionales locales.</p>
-      </div>
-      <div class="search-bar">
-        <input type="text" id="products-search" placeholder="Buscar productos...">
-      </div>
-      <div id="products-list" class="products-grid">
-        <!-- Ejemplo de producto -->
-        <div class="product-card">
-          <div class="product-type digital">Digital</div>
-          <div class="product-image">Portada del curso</div>
-          <h4>Curso de Diseño UX/UI</h4>
-          <p>Por Ana López</p>
-          <div class="product-price">$4.500,00 ARS</div>
-          <div class="product-actions">
-            <button class="btn btn-outline buy-btn" data-name="Curso de Diseño UX/UI" data-amount="4500" data-id="p1">Comprar</button>
-          </div>
-        </div>
-      </div>
-    </div>
-
     <!-- Register View -->
     <div id="register-view" class="view">
       <div class="hero">
@@ -670,11 +634,11 @@
             <label for="description">Perfil Profesional (opcional)</label>
             <textarea id="description" name="description" rows="4" placeholder="Describa su experiencia, certificaciones y enfoque profesional..."></textarea>
           </div>
-          <!-- === NUEVA SECCIÓN: ZONA DE OPERACIONES === -->
+          <!-- === SECCIÓN DE UBICACIÓN OBLIGATORIA === -->
           <div class="form-group">
             <label>Zona de Operaciones *</label>
             <div class="map-info">
-              <p><strong>Ubicación:</strong> <span id="form-location">No definida</span></p>
+              <p><strong>Ubicación en el mapa:</strong> <span id="form-location">No definida</span></p>
               <p><strong>Radio de cobertura:</strong> <span id="form-radius">0</span> metros</p>
               <p class="warning-text">* Haga clic en el mapa y ajuste el radio antes de registrar.</p>
             </div>
@@ -688,7 +652,7 @@
           </div>
           <div class="form-actions">
             <button type="submit" class="btn">Registrar Perfil Profesional</button>
-            <button type="button" class="btn btn-outline" id="define-location-btn">Definir Ubicación</button>
+            <button type="button" class="btn btn-outline" id="define-location-btn">Ir al Mapa</button>
           </div>
         </form>
       </div>
@@ -803,11 +767,12 @@
       messagingSenderId: '123456789',
       appId: '1:123456789:web:abcdef123456789'
     };
-    let db, auth;
+    let db, auth, storage;
     try {
       firebase.initializeApp(firebaseConfig);
       db = firebase.firestore();
       auth = firebase.auth();
+      storage = firebase.storage();
     } catch (e) {
       console.warn('Firebase no inicializado');
     }
@@ -821,7 +786,6 @@
     let vectorSource = null;
     let currentRadius = 0;
     let currentUser = null;
-    let selectedHire = null;
 
     // =============== MAP FUNCTIONS ===============
     function initializeMap() {
@@ -907,347 +871,6 @@
       document.getElementById('location-coords').textContent = `${lonLat[1].toFixed(4)}°, ${lonLat[0].toFixed(4)}°`;
       document.getElementById('coverage-radius').textContent = Math.round(radius);
       document.getElementById('radio-value').textContent = Math.round(radius);
-      // Actualizar también en el formulario de registro
-      const formLocation = document.getElementById('form-location');
-      const formRadius = document.getElementById('form-radius');
-      if (formLocation && formRadius) {
-        formLocation.textContent = `${lonLat[1].toFixed(4)}°, ${lonLat[0].toFixed(4)}°`;
-        formRadius.textContent = Math.round(radius);
-      }
-    }
-
-    function enableRadiusControls() {
-      const decreaseBtn = document.getElementById('decreaseRadius');
-      const increaseBtn = document.getElementById('increaseRadius');
-      if (decreaseBtn && increaseBtn) {
-        decreaseBtn.disabled = false;
-        increaseBtn.disabled = false;
-      }
-    }
-
-    function adjustRadius(delta) {
-      if (!pointFeature) return;
-      currentRadius = Math.max(0, currentRadius + delta);
-      const coord = pointFeature.getGeometry().getCoordinates();
-      if (circleFeature) {
-        vectorSource.removeFeature(circleFeature);
-        circleFeature = null;
-      }
-      if (currentRadius > 0) {
-        updateCircle(coord, currentRadius);
-        document.getElementById('radio-display').classList.add('active');
-      } else {
-        document.getElementById('radio-display').classList.remove('active');
-      }
-      updateMapInfo(coord, currentRadius);
-      mapData.location = coord;
-      mapData.radius = currentRadius;
-    }
-
-    // =============== NAVIGATION ===============
-    function navigateTo(viewName) {
-      document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
-      document.getElementById(`${viewName}-view`)?.classList.add('active');
-      document.querySelectorAll('.nav-link').forEach(el => el.classList.remove('active'));
-      document.getElementById(`nav-${viewName}`)?.classList.add('active');
-      if (viewName === 'home' && !mapInitialized) initializeMap();
-    }
-
-    // =============== AUTH FUNCTIONS ===============
-    async function login(email, password) {
-      if (!auth) {
-        alert('Funcionalidad de autenticación no disponible.');
-        return;
-      }
-      try {
-        const userCredential = await auth.signInWithEmailAndPassword(email, password);
-        currentUser = userCredential.user;
-        return userCredential.user;
-      } catch (error) {
-        alert('Error en el inicio de sesión: ' + error.message);
-        throw error;
-      }
-    }
-
-    async function register(email, password) {
-      if (!auth) {
-        alert('Funcionalidad de registro no disponible.');
-        return;
-      }
-      try {
-        const userCredential = await auth.createUserWithEmailAndPassword(email, password);
-        currentUser = userCredential.user;
-        return userCredential.user;
-      } catch (error) {
-        alert('Error en el registro: ' + error.message);
-        throw error;
-      }
-    }
-
-    function logout() {
-      if (!auth) return;
-      auth.signOut().then(() => {
-        currentUser = null;
-        updateUIBasedOnAuthState(null);
-        navigateTo('home');
-      });
-    }
-
-    // =============== DATABASE FUNCTIONS ===============
-    async function createTalent(talentData, userId) {
-      if (!db) {
-        alert('Base de datos no disponible. Guardando localmente...');
-        localStorage.setItem('talentData', JSON.stringify(talentData));
-        return 'local';
-      }
-      const talent = {
-        ...talentData,
-        userId: userId,
-        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-        verification: { email: true, phone: false, id: false, portfolio: false, level: 'basic' },
-        boostExpiry: null,
-        isPremium: false
-      };
-      const docRef = await db.collection('talents').add(talent);
-      return docRef.id;
-    }
-
-    // =============== UI FUNCTIONS ===============
-    function updateUIBasedOnAuthState(user) {
-      const profileLink = document.getElementById('nav-profile');
-      const loginLink = document.getElementById('nav-login');
-      if (user && profileLink && loginLink) {
-        profileLink.style.display = 'block';
-        loginLink.style.display = 'none';
-        loadProfileData();
-      } else if (profileLink && loginLink) {
-        profileLink.style.display = 'none';
-        loginLink.style.display = 'block';
-      }
-    }
-
-    function loadProfileData() {
-      if (!currentUser) return;
-      getTalentByUserId(currentUser.uid).then(talent => {
-        if (talent) {
-          document.getElementById('profile-name').textContent = talent.fullName;
-          document.getElementById('profile-email').textContent = currentUser.email || 'email@profesional.com';
-          document.getElementById('profileFullName').value = talent.fullName;
-          document.getElementById('profileOfferType').value = talent.offerType || 'services';
-          document.getElementById('profileProfession').value = talent.profession;
-          document.getElementById('profilePhone').value = talent.phone;
-          document.getElementById('profileDescription').value = talent.description || '';
-        }
-      }).catch(console.error);
-    }
-
-    // =============== PAYMENT BRICK ===============
-    const mp = new MercadoPago('APP_USR-3054818d-0bb9-4459-b940-94b1df582627'); // LIVE Public Key
-    let paymentInitialized = false;
-
-    async function initializePaymentBrick() {
-      if (!selectedHire) return;
-      const amount = selectedHire.amount;
-
-      const settings = {
-        initialization: {
-          amount: amount,
-          country: 'ARG',     // <-- ¡Importante!
-          locale: 'es-AR'     // <-- Para que aparezca "Pagar con Mercado Pago"
-        },
-        customization: {
-          paymentMethods: {
-            creditCard: 'all',
-            debitCard: 'all',
-            ticket: 'all',
-            bankTransfer: 'all',
-            mercadoPago: 'all'  // <-- Esto ahora funcionará
-          }
-        },
-        callbacks: {
-          onReady: () => console.log('Brick listo'),
-          onSubmit: async (formData) => {
-            try {
-              const response = await fetch('/api/process-payment', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ ...formData, transaction_amount: amount, talentId: selectedHire.id })
-              });
-              const result = await response.json();
-              if (result.status === 'approved') {
-                alert('¡Pago aprobado!');
-                navigateTo('home');
-              } else {
-                alert('Pago rechazado.');
-              }
-            } catch (error) {
-              console.error('Error:', error);
-              alert('Error al procesar el pago.');
-            }
-          },
-          onError: (error) => console.error('Error en Brick:', error)
-        }
-      };
-
-      const bricksBuilder = mp.bricks();
-      const container = document.getElementById('payment-brick-container');
-      container.innerHTML = '';
-      await bricksBuilder.create('payment', 'payment-brick-container', settings);
-    }
-
-    const observer = new MutationObserver(() => {
-      if (document.getElementById('payment-view')?.classList.contains('active') && !paymentInitialized) {
-        initializePaymentBrick();
-        paymentInitialized = true;
-      } else {
-        paymentInitialized = false;
-      }
-    });
-    observer.observe(document.body, { childList: true, subtree: true });
-
-    // =============== EVENT LISTENERS ===============
-    document.addEventListener('DOMContentLoaded', () => {
-      initializeMap();
-
-      // Navigation
-      document.querySelectorAll('.nav-link').forEach(link => {
-        link.addEventListener('click', function(e) {
-          e.preventDefault();
-          const viewName = this.id.replace('nav-', '');
-          navigateTo(viewName);
-        });
-      });
-
-      // Radius controls
-      document.getElementById('decreaseRadius')?.addEventListener('click', () => adjustRadius(-200));
-      document.getElementById('increaseRadius')?.addEventListener('click', () => adjustRadius(200));
-
-      // Contratar / Comprar
-      document.addEventListener('click', function(e) {
-        if (e.target.classList.contains('hire-btn')) {
-          const card = e.target.closest('.product-card');
-          const select = card.querySelector('.payment-mode');
-          const mode = select.value;
-          const rates = {
-            hourly: parseFloat(select.dataset.hourly),
-            weekly: parseFloat(select.dataset.weekly),
-            biweekly: parseFloat(select.dataset.biweekly),
-            monthly: parseFloat(select.dataset.monthly)
-          };
-          const amount = rates[mode] || 0;
-          selectedHire = {
-            name: e.target.dataset.name,
-            id: e.target.dataset.id,
-            amount,
-            mode
-          };
-          document.getElementById('hire-name').textContent = selectedHire.name;
-          document.getElementById('payment-amount').textContent = `Total: ${new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(amount)}`;
-          navigateTo('payment');
-        }
-        if (e.target.classList.contains('buy-btn')) {
-          const amount = parseFloat(e.target.dataset.amount);
-          selectedHire = {
-            name: e.target.dataset.name,
-            id: e.target.dataset.id,
-            amount,
-            type: 'product'
-          };
-          document.getElementById('hire-name').textContent = selectedHire.name;
-          document.getElementById('payment-amount').textContent = `Total: ${new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(amount)}`;
-          navigateTo('payment');
-        }
-      });
-
-      // Volver a talentos
-      document.getElementById('back-to-talents-btn')?.addEventListener('click', () => navigateTo('talents'));
-
-      // Botón "Definir Ubicación"
-      document.getElementById('define-location-btn')?.addEventListener('click', () => navigateTo('home'));
-
-      // Botón "Crear Cuenta"
-      document.getElementById('create-account-btn')?.addEventListener('click', () => navigateTo('register'));
-
-      // Logout
-      document.getElementById('logout-btn')?.addEventListener('click', () => logout());
-
-      // Login
-      document.getElementById('loginForm')?.addEventListener('submit', async function(e) {
-        e.preventDefault();
-        const email = document.getElementById('loginEmail').value;
-        const password = document.getElementById('loginPassword').value;
-        try {
-          await login(email, password);
-          navigateTo('profile');
-        } catch (error) {
-          console.error('Login error:', error);
-        }
-      });
-
-      // Profile
-      document.getElementById('profileForm')?.addEventListener('submit', async function(e) {
-        e.preventDefault();
-        if (!currentUser) return;
-        const profileData = {
-          fullName: document.getElementById('profileFullName').value,
-          offerType: document.getElementById('profileOfferType').value,
-          profession: document.getElementById('profileProfession').value,
-          phone: document.getElementById('profilePhone').value,
-          description: document.getElementById('profileDescription').value
-        };
-        try {
-          await db.collection('talents').doc(currentUser.uid).update(profileData);
-          alert('Perfil actualizado exitosamente');
-        } catch (error) {
-          console.error('Error updating profile:', error);
-          alert('Error al actualizar el perfil.');
-        }
-      });
-
-      // Register
-      document.getElementById('talentForm')?.addEventListener('submit', async function(e) {
-        e.preventDefault();
-        if (!document.getElementById('accept-terms').checked) {
-          alert('Debe aceptar la cláusula de responsabilidad.');
-          return;
-        }
-        if (!mapData.location) {
-          alert('Por favor, defina su ubicación en el mapa antes de registrar.');
-          return;
-        }
-        const formData = new FormData(this);
-        const talentData = {
-          fullName: formData.get('fullName'),
-          email: formData.get('email'),
-          offerType: formData.get('offerType'),
-          profession: formData.get('profession'),
-          phone: formData.get('phone'),
-          description: formData.get('description'),
-          location: {
-            lat: ol.proj.toLonLat(mapData.location)[1],
-            lng: ol.proj.toLonLat(mapData.location)[0]
-          },
-          radius: mapData.radius
-        };
-        try {
-          const userId = currentUser ? currentUser.uid : 'anonymous';
-          await createTalent(talentData, userId);
-          alert('¡Perfil registrado exitosamente!');
-          navigateTo('profile');
-        } catch (error) {
-          console.error('Error:', error);
-          alert('Error al registrar el perfil.');
-        }
-      });
-    });
-
-    // Global functions
-    window.navigateTo = navigateTo;
-    window.logout = logout;
-  </script>
-</body>
-</html>
-
-
+      // Actualizar tam
 
 
