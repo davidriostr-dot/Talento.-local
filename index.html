@@ -6,6 +6,7 @@
   <title>Talento Local | Plataforma Profesional</title>
   <!-- OpenLayers CSS -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ol@v7.4.0/ol.css">
+  <!-- Map Library: OpenLayers as global script -->
   <script src="https://cdn.jsdelivr.net/npm/ol@v7.4.0/dist/ol.js"></script>
   <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
@@ -49,6 +50,7 @@
       margin: 0 auto;
       padding: 0 32px;
     }
+    /* Header & Navigation - ESTILOS ACTUALIZADOS */
     header {
       display: flex;
       justify-content: space-between;
@@ -107,49 +109,7 @@
       border: none;
       box-shadow: 0 4px 12px rgba(14, 165, 233, 0.4);
     }
-    .user-icon {
-      width: 48px;
-      height: 48px;
-      border-radius: 50%;
-      background: var(--secondary);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: white;
-      font-weight: bold;
-      font-size: 1.2rem;
-      box-shadow: 0 4px 12px rgba(14, 165, 233, 0.3);
-      cursor: pointer;
-    }
-    .user-dropdown {
-      position: absolute;
-      top: 100px;
-      right: 32px;
-      background: white;
-      border-radius: var(--radius);
-      box-shadow: var(--shadow-lg);
-      border: 1px solid var(--gray-200);
-      width: 280px;
-      z-index: 1000;
-      display: none;
-    }
-    .user-dropdown a {
-      display: block;
-      padding: 14px 20px;
-      text-decoration: none;
-      color: var(--gray-800);
-      font-weight: 600;
-      transition: var(--transition);
-    }
-    .user-dropdown a:hover {
-      background: var(--gray-100);
-    }
-    .dropdown-header {
-      padding: 16px 20px;
-      border-bottom: 1px solid var(--gray-200);
-      font-weight: 700;
-      color: var(--primary-dark);
-    }
+    /* Views */
     .view {
       display: none;
     }
@@ -161,6 +121,7 @@
       from { opacity: 0; transform: translateY(16px); }
       to { opacity: 1; transform: translateY(0); }
     }
+    /* Hero Section */
     .hero {
       text-align: center;
       margin-bottom: 56px;
@@ -185,6 +146,7 @@
       margin-bottom: 32px;
       font-weight: 500;
     }
+    /* Search Bar */
     .search-bar {
       max-width: 700px;
       margin: 0 auto 40px;
@@ -203,6 +165,7 @@
       border-color: var(--secondary);
       box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.15);
     }
+    /* Map Section */
     #map {
       width: 100%;
       height: 650px;
@@ -212,6 +175,7 @@
       border: 1px solid rgba(255,255,255,0.5);
       backdrop-filter: blur(10px);
     }
+    /* Radio display */
     .radio-display {
       position: absolute;
       top: 32px;
@@ -250,6 +214,7 @@
       margin-bottom: 12px;
       font-size: 1.05rem;
     }
+    /* Controls */
     .map-controls {
       display: flex;
       gap: 16px;
@@ -280,6 +245,7 @@
       transform: none;
       box-shadow: none;
     }
+    /* Form Styles */
     .form-container {
       background: linear-gradient(135deg, white 0%, #f8fafc 100%);
       padding: 40px;
@@ -301,8 +267,7 @@
     }
     .form-group input,
     .form-group select,
-    .form-group textarea,
-    .form-group video {
+    .form-group textarea {
       width: 100%;
       padding: 16px;
       border: 2px solid var(--gray-200);
@@ -382,6 +347,7 @@
       margin: 8px 0;
       font-weight: 600;
     }
+    /* Product Grid */
     .products-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
@@ -445,6 +411,7 @@
       display: flex;
       gap: 12px;
     }
+    /* Stats Section */
     .stats {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
@@ -501,6 +468,11 @@
       margin-bottom: 24px;
       color: var(--gray-800);
     }
+    .warning-text {
+      font-size: 0.9rem;
+      color: var(--warning);
+      font-style: italic;
+    }
     @media (max-width: 900px) {
       header {
         flex-direction: column;
@@ -535,18 +507,16 @@
         <div class="logo-icon">TL</div>
         Talento<span style="background: linear-gradient(135deg, var(--secondary) 0%, var(--accent) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Local</span>
       </div>
-      <div style="display: flex; align-items: center; gap: 24px;">
-        <nav>
-          <ul>
-            <li><a href="#" id="nav-home" class="nav-link active">Plataforma</a></li>
-            <li><a href="#" id="nav-talents" class="nav-link">Talentos</a></li>
-            <li><a href="#" id="nav-products" class="nav-link">Productos</a></li>
-            <li><a href="#" id="nav-register" class="nav-link">Unirse</a></li>
-          </ul>
-        </nav>
-        <div class="user-icon" id="user-icon">👤</div>
-        <div class="user-dropdown" id="user-dropdown"></div>
-      </div>
+      <nav>
+        <ul>
+          <li><a href="#" id="nav-home" class="nav-link active">Plataforma</a></li>
+          <li><a href="#" id="nav-talents" class="nav-link">Talentos</a></li>
+          <li><a href="#" id="nav-products" class="nav-link">Productos</a></li>
+          <li><a href="#" id="nav-register" class="nav-link">Unirse</a></li>
+          <li><a href="#" id="nav-profile" class="nav-link" style="display: none;">Mi Perfil</a></li>
+          <li><a href="#" id="nav-login" class="nav-link">Iniciar Sesión</a></li>
+        </ul>
+      </nav>
     </header>
 
     <!-- Home View -->
@@ -608,7 +578,24 @@
         <input type="text" id="talents-search" placeholder="Buscar talentos por nombre, profesión o ubicación...">
       </div>
       <div id="talents-list" class="products-grid">
-        <!-- Talents will be loaded here -->
+        <!-- Ejemplo de talentos -->
+        <div class="product-card">
+          <div class="product-image">Foto</div>
+          <h4>Ana López</h4>
+          <p>Diseñadora Gráfica Premium</p>
+          <div class="form-group">
+            <label>Modalidad:</label>
+            <select class="payment-mode" data-hourly="500" data-weekly="2000" data-biweekly="3500" data-monthly="6000">
+              <option value="hourly">Por hora - $500 ARS</option>
+              <option value="weekly">Por semana - $2.000 ARS</option>
+              <option value="biweekly">Por quincena - $3.500 ARS</option>
+              <option value="monthly">Por mes - $6.000 ARS</option>
+            </select>
+          </div>
+          <div class="product-actions">
+            <button class="btn btn-outline hire-btn" data-name="Ana López" data-id="1">Contratar</button>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -622,7 +609,17 @@
         <input type="text" id="products-search" placeholder="Buscar productos...">
       </div>
       <div id="products-list" class="products-grid">
-        <!-- Products will be loaded here -->
+        <!-- Ejemplo de producto -->
+        <div class="product-card">
+          <div class="product-type digital">Digital</div>
+          <div class="product-image">Portada del curso</div>
+          <h4>Curso de Diseño UX/UI</h4>
+          <p>Por Ana López</p>
+          <div class="product-price">$4.500,00 ARS</div>
+          <div class="product-actions">
+            <button class="btn btn-outline buy-btn" data-name="Curso de Diseño UX/UI" data-amount="4500" data-id="p1">Comprar</button>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -636,15 +633,24 @@
         <form id="talentForm">
           <div class="form-group">
             <label for="fullName">Nombre Completo *</label>
-            <input type="text" id="fullName" required>
+            <input type="text" id="fullName" name="fullName" required>
           </div>
           <div class="form-group">
             <label for="email">Correo Profesional *</label>
-            <input type="email" id="email" required>
+            <input type="email" id="email" name="email" required>
+          </div>
+          <div class="form-group">
+            <label for="offerType">¿Qué ofrece? *</label>
+            <select id="offerType" name="offerType" required>
+              <option value="">Seleccione una opción</option>
+              <option value="services">Solo servicios</option>
+              <option value="products">Solo productos</option>
+              <option value="both">Ambos</option>
+            </select>
           </div>
           <div class="form-group">
             <label for="profession">Especialidad Profesional *</label>
-            <select id="profession" required>
+            <select id="profession" name="profession" required>
               <option value="">Seleccione su especialidad</option>
               <option value="carpintero">Carpintería de Alta Gama</option>
               <option value="electricista">Electricista Certificado</option>
@@ -656,20 +662,29 @@
               <option value="otros">Otra Especialidad</option>
             </select>
           </div>
+          <div class="form-group">
+            <label for="phone">Teléfono Corporativo *</label>
+            <input type="tel" id="phone" name="phone" required>
+          </div>
+          <div class="form-group">
+            <label for="description">Perfil Profesional (opcional)</label>
+            <textarea id="description" name="description" rows="4" placeholder="Describa su experiencia, certificaciones y enfoque profesional..."></textarea>
+          </div>
+          <!-- === NUEVA SECCIÓN: ZONA DE OPERACIONES === -->
+          <div class="form-group">
+            <label>Zona de Operaciones *</label>
+            <div class="map-info">
+              <p><strong>Ubicación:</strong> <span id="form-location">No definida</span></p>
+              <p><strong>Radio de cobertura:</strong> <span id="form-radius">0</span> metros</p>
+              <p class="warning-text">* Haga clic en el mapa y ajuste el radio antes de registrar.</p>
+            </div>
+          </div>
           <div class="legal-notice">
             <strong>CLÁUSULA DE LIMITACIÓN DE RESPONSABILIDAD:</strong> Talento Local actúa únicamente como intermediario entre profesionales y clientes. No asume responsabilidad por la calidad, legalidad o cumplimiento de los servicios o productos ofrecidos por los usuarios de la plataforma.
           </div>
           <div class="legal-checkbox">
             <input type="checkbox" id="accept-terms" required>
             <label for="accept-terms">Acepto la <strong>Cláusula de Limitación de Responsabilidad</strong>.</label>
-          </div>
-          <div class="form-group">
-            <label>Zona de Operaciones</label>
-            <div class="map-info">
-              <p><strong>Ubicación:</strong> <span id="form-location">No definida</span></p>
-              <p><strong>Radio de cobertura:</strong> <span id="form-radius">0</span> metros</p>
-              <p class="warning-text">* Defina su ubicación en la Plataforma antes de registrar</p>
-            </div>
           </div>
           <div class="form-actions">
             <button type="submit" class="btn">Registrar Perfil Profesional</button>
@@ -687,8 +702,7 @@
       </div>
       <div class="form-container">
         <div style="text-align: center; margin-bottom: 24px;">
-          <div id="profile-avatar" style="display: inline-block; width: 120px; height: 120px; border-radius: 50%; background: var(--gray-200); margin-bottom: 16px; cursor: pointer;">
-          </div>
+          <div id="profile-avatar" style="display: inline-block; width: 120px; height: 120px; border-radius: 50%; background: var(--gray-200); margin-bottom: 16px; cursor: pointer;"></div>
           <h3 id="profile-name">Nombre del Profesional</h3>
           <p id="profile-email">email@profesional.com</p>
         </div>
@@ -696,6 +710,14 @@
           <div class="form-group">
             <label for="profileFullName">Nombre Completo *</label>
             <input type="text" id="profileFullName" required>
+          </div>
+          <div class="form-group">
+            <label for="profileOfferType">Tipo de Oferta *</label>
+            <select id="profileOfferType" required>
+              <option value="services">Solo servicios</option>
+              <option value="products">Solo productos</option>
+              <option value="both">Ambos</option>
+            </select>
           </div>
           <div class="form-group">
             <label for="profileProfession">Especialidad Profesional *</label>
@@ -719,26 +741,11 @@
             <label for="profileDescription">Perfil Profesional</label>
             <textarea id="profileDescription" rows="4"></textarea>
           </div>
-          <div class="form-group">
-            <label>Subir video de demostración (máx. 60s)</label>
-            <input type="file" id="video-upload" accept="video/*" style="margin-top: 12px;">
-            <p style="font-size: 0.9rem; color: var(--gray-600); margin-top: 8px;">
-              Muestra en un video corto tu proceso de trabajo, resultados o servicios.
-            </p>
-          </div>
           <div class="form-actions">
             <button type="submit" class="btn">Guardar Cambios</button>
             <button type="button" class="btn btn-outline" id="logout-btn">Cerrar Sesión</button>
           </div>
         </form>
-      </div>
-      <h3 style="margin: 48px 0 24px; text-align: center;">Mis Productos</h3>
-      <div id="my-products-list" class="products-grid">
-        <!-- User's products will be loaded here -->
-      </div>
-      <h3 style="margin: 48px 0 24px; text-align: center;">Mis Videos</h3>
-      <div id="videos-list" class="products-grid" style="margin-top: 24px;">
-        <!-- Videos will be loaded here -->
       </div>
     </div>
 
@@ -746,7 +753,7 @@
     <div id="login-view" class="view">
       <div class="hero">
         <h1>Iniciar Sesión en Talento Local</h1>
-        <p>Acceda a su perfil profesional y gestione sus servicios y productos.</p>
+        <p>Acceda a su perfil profesional.</p>
       </div>
       <div class="form-container">
         <form id="loginForm">
@@ -775,7 +782,7 @@
       <div class="price-display" id="payment-amount">Total: $0,00 ARS</div>
       <div id="payment-brick-container"></div>
       <div style="text-align: center; margin-top: 24px;">
-        <button class="btn btn-outline" id="back-to-talents-btn">← Volver</button>
+        <button class="btn btn-outline" id="back-to-talents-btn">← Volver a Talentos</button>
       </div>
     </div>
 
@@ -814,8 +821,9 @@
     let vectorSource = null;
     let currentRadius = 0;
     let currentUser = null;
+    let selectedHire = null;
 
-    // =============== MAP ===============
+    // =============== MAP FUNCTIONS ===============
     function initializeMap() {
       if (mapInitialized) return;
       vectorSource = new ol.source.Vector();
@@ -899,6 +907,7 @@
       document.getElementById('location-coords').textContent = `${lonLat[1].toFixed(4)}°, ${lonLat[0].toFixed(4)}°`;
       document.getElementById('coverage-radius').textContent = Math.round(radius);
       document.getElementById('radio-value').textContent = Math.round(radius);
+      // Actualizar también en el formulario de registro
       const formLocation = document.getElementById('form-location');
       const formRadius = document.getElementById('form-radius');
       if (formLocation && formRadius) {
@@ -938,86 +947,103 @@
     // =============== NAVIGATION ===============
     function navigateTo(viewName) {
       document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
-      const targetView = document.getElementById(`${viewName}-view`);
-      if (targetView) targetView.classList.add('active');
+      document.getElementById(`${viewName}-view`)?.classList.add('active');
       document.querySelectorAll('.nav-link').forEach(el => el.classList.remove('active'));
-      const activeLink = document.getElementById(`nav-${viewName}`);
-      if (activeLink) activeLink.classList.add('active');
+      document.getElementById(`nav-${viewName}`)?.classList.add('active');
       if (viewName === 'home' && !mapInitialized) initializeMap();
     }
 
-    // =============== USER MENU ===============
-    let userState = {
-      isLoggedIn: false,
-      role: null // 'cliente' o 'talento'
-    };
-
-    function simulateLogin(role) {
-      userState.isLoggedIn = true;
-      userState.role = role;
-      renderUserDropdown();
-      updateUIBasedOnAuthState({ uid: 'simulated' });
-    }
-
-    function simulateLogout() {
-      userState.isLoggedIn = false;
-      userState.role = null;
-      renderUserDropdown();
-      updateUIBasedOnAuthState(null);
-    }
-
-    function renderUserDropdown() {
-      const dropdown = document.getElementById('user-dropdown');
-      if (!dropdown) return;
-
-      if (!userState.isLoggedIn) {
-        dropdown.innerHTML = `
-          <div class="dropdown-header">¡Bienvenido!</div>
-          <a href="#" onclick="simulateLogin('cliente'); return false;">Iniciar Sesión</a>
-          <a href="#" onclick="navigateTo('register'); return false;">Crear Cuenta (Cliente)</a>
-          <a href="#" onclick="navigateTo('register'); return false;">Quiero ser Talento</a>
-        `;
-      } else if (userState.role === 'cliente') {
-        dropdown.innerHTML = `
-          <div class="dropdown-header">Cliente</div>
-          <a href="#" onclick="navigateTo('profile'); return false;">Mi Perfil</a>
-          <a href="#">Mis Reservas</a>
-          <a href="#">Mis Compras</a>
-          <a href="#" onclick="simulateLogout(); return false;">Cerrar Sesión</a>
-        `;
-      } else if (userState.role === 'talento') {
-        dropdown.innerHTML = `
-          <div class="dropdown-header">Talento</div>
-          <a href="#">Dashboard</a>
-          <a href="#">Mi Agenda / Servicios</a>
-          <a href="#" onclick="navigateTo('products'); return false;">Mi Catálogo de Productos</a>
-          <a href="#" onclick="navigateTo('profile'); document.querySelector('#liquidation-box')?.scrollIntoView(); return false;">💰 Mis Finanzas (Escrow)</a>
-          <a href="#" onclick="navigateTo('home'); return false;">Ajustes de Perfil</a>
-          <a href="#" onclick="simulateLogout(); return false;">Cerrar Sesión</a>
-        `;
+    // =============== AUTH FUNCTIONS ===============
+    async function login(email, password) {
+      if (!auth) {
+        alert('Funcionalidad de autenticación no disponible.');
+        return;
       }
-
-      dropdown.style.display = 'block';
+      try {
+        const userCredential = await auth.signInWithEmailAndPassword(email, password);
+        currentUser = userCredential.user;
+        return userCredential.user;
+      } catch (error) {
+        alert('Error en el inicio de sesión: ' + error.message);
+        throw error;
+      }
     }
 
-    // Toggle del menú
-    document.getElementById('user-icon')?.addEventListener('click', function(e) {
-      e.stopPropagation();
-      const dropdown = document.getElementById('user-dropdown');
-      dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
-    });
-
-    // Cerrar dropdown al hacer clic fuera
-    document.addEventListener('click', function(e) {
-      if (!e.target.closest('.user-icon') && !e.target.closest('.user-dropdown')) {
-        document.getElementById('user-dropdown').style.display = 'none';
+    async function register(email, password) {
+      if (!auth) {
+        alert('Funcionalidad de registro no disponible.');
+        return;
       }
-    });
+      try {
+        const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+        currentUser = userCredential.user;
+        return userCredential.user;
+      } catch (error) {
+        alert('Error en el registro: ' + error.message);
+        throw error;
+      }
+    }
+
+    function logout() {
+      if (!auth) return;
+      auth.signOut().then(() => {
+        currentUser = null;
+        updateUIBasedOnAuthState(null);
+        navigateTo('home');
+      });
+    }
+
+    // =============== DATABASE FUNCTIONS ===============
+    async function createTalent(talentData, userId) {
+      if (!db) {
+        alert('Base de datos no disponible. Guardando localmente...');
+        localStorage.setItem('talentData', JSON.stringify(talentData));
+        return 'local';
+      }
+      const talent = {
+        ...talentData,
+        userId: userId,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+        verification: { email: true, phone: false, id: false, portfolio: false, level: 'basic' },
+        boostExpiry: null,
+        isPremium: false
+      };
+      const docRef = await db.collection('talents').add(talent);
+      return docRef.id;
+    }
+
+    // =============== UI FUNCTIONS ===============
+    function updateUIBasedOnAuthState(user) {
+      const profileLink = document.getElementById('nav-profile');
+      const loginLink = document.getElementById('nav-login');
+      if (user && profileLink && loginLink) {
+        profileLink.style.display = 'block';
+        loginLink.style.display = 'none';
+        loadProfileData();
+      } else if (profileLink && loginLink) {
+        profileLink.style.display = 'none';
+        loginLink.style.display = 'block';
+      }
+    }
+
+    function loadProfileData() {
+      if (!currentUser) return;
+      getTalentByUserId(currentUser.uid).then(talent => {
+        if (talent) {
+          document.getElementById('profile-name').textContent = talent.fullName;
+          document.getElementById('profile-email').textContent = currentUser.email || 'email@profesional.com';
+          document.getElementById('profileFullName').value = talent.fullName;
+          document.getElementById('profileOfferType').value = talent.offerType || 'services';
+          document.getElementById('profileProfession').value = talent.profession;
+          document.getElementById('profilePhone').value = talent.phone;
+          document.getElementById('profileDescription').value = talent.description || '';
+        }
+      }).catch(console.error);
+    }
 
     // =============== PAYMENT BRICK ===============
-    const mp = new MercadoPago('APP_USR-3054818d-0bb9-4459-b940-94b1df582627');
+    const mp = new MercadoPago('APP_USR-3054818d-0bb9-4459-b940-94b1df582627'); // LIVE Public Key
     let paymentInitialized = false;
-    let selectedHire = null;
 
     async function initializePaymentBrick() {
       if (!selectedHire) return;
@@ -1026,8 +1052,8 @@
       const settings = {
         initialization: {
           amount: amount,
-          country: 'ARG',
-          locale: 'es-AR'
+          country: 'ARG',     // <-- ¡Importante!
+          locale: 'es-AR'     // <-- Para que aparezca "Pagar con Mercado Pago"
         },
         customization: {
           paymentMethods: {
@@ -1035,7 +1061,7 @@
             debitCard: 'all',
             ticket: 'all',
             bankTransfer: 'all',
-            mercadoPago: 'all'
+            mercadoPago: 'all'  // <-- Esto ahora funcionará
           }
         },
         callbacks: {
@@ -1049,7 +1075,7 @@
               });
               const result = await response.json();
               if (result.status === 'approved') {
-                alert(`¡Pago aprobado!`);
+                alert('¡Pago aprobado!');
                 navigateTo('home');
               } else {
                 alert('Pago rechazado.');
@@ -1070,11 +1096,9 @@
     }
 
     const observer = new MutationObserver(() => {
-      if (document.getElementById('payment-view')?.classList.contains('active')) {
-        if (!paymentInitialized) {
-          initializePaymentBrick();
-          paymentInitialized = true;
-        }
+      if (document.getElementById('payment-view')?.classList.contains('active') && !paymentInitialized) {
+        initializePaymentBrick();
+        paymentInitialized = true;
       } else {
         paymentInitialized = false;
       }
@@ -1098,12 +1122,6 @@
       document.getElementById('decreaseRadius')?.addEventListener('click', () => adjustRadius(-200));
       document.getElementById('increaseRadius')?.addEventListener('click', () => adjustRadius(200));
 
-      // Buttons
-      document.getElementById('define-location-btn')?.addEventListener('click', () => navigateTo('home'));
-      document.getElementById('create-account-btn')?.addEventListener('click', () => navigateTo('register'));
-      document.getElementById('back-to-talents-btn')?.addEventListener('click', () => navigateTo('talents'));
-      document.getElementById('logout-btn')?.addEventListener('click', () => simulateLogout());
-
       // Contratar / Comprar
       document.addEventListener('click', function(e) {
         if (e.target.classList.contains('hire-btn')) {
@@ -1117,37 +1135,119 @@
             monthly: parseFloat(select.dataset.monthly)
           };
           const amount = rates[mode] || 0;
-          selectedHire = { name: e.target.dataset.name, amount, type: 'service' };
+          selectedHire = {
+            name: e.target.dataset.name,
+            id: e.target.dataset.id,
+            amount,
+            mode
+          };
           document.getElementById('hire-name').textContent = selectedHire.name;
           document.getElementById('payment-amount').textContent = `Total: ${new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(amount)}`;
           navigateTo('payment');
         }
         if (e.target.classList.contains('buy-btn')) {
           const amount = parseFloat(e.target.dataset.amount);
-          selectedHire = { name: e.target.dataset.name, amount, type: 'product' };
+          selectedHire = {
+            name: e.target.dataset.name,
+            id: e.target.dataset.id,
+            amount,
+            type: 'product'
+          };
           document.getElementById('hire-name').textContent = selectedHire.name;
           document.getElementById('payment-amount').textContent = `Total: ${new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(amount)}`;
           navigateTo('payment');
         }
       });
 
-      // Cláusula legal
-      document.getElementById('talentForm')?.addEventListener('submit', function(e) {
-        if (!document.getElementById('accept-terms')?.checked) {
-          e.preventDefault();
+      // Volver a talentos
+      document.getElementById('back-to-talents-btn')?.addEventListener('click', () => navigateTo('talents'));
+
+      // Botón "Definir Ubicación"
+      document.getElementById('define-location-btn')?.addEventListener('click', () => navigateTo('home'));
+
+      // Botón "Crear Cuenta"
+      document.getElementById('create-account-btn')?.addEventListener('click', () => navigateTo('register'));
+
+      // Logout
+      document.getElementById('logout-btn')?.addEventListener('click', () => logout());
+
+      // Login
+      document.getElementById('loginForm')?.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const email = document.getElementById('loginEmail').value;
+        const password = document.getElementById('loginPassword').value;
+        try {
+          await login(email, password);
+          navigateTo('profile');
+        } catch (error) {
+          console.error('Login error:', error);
+        }
+      });
+
+      // Profile
+      document.getElementById('profileForm')?.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        if (!currentUser) return;
+        const profileData = {
+          fullName: document.getElementById('profileFullName').value,
+          offerType: document.getElementById('profileOfferType').value,
+          profession: document.getElementById('profileProfession').value,
+          phone: document.getElementById('profilePhone').value,
+          description: document.getElementById('profileDescription').value
+        };
+        try {
+          await db.collection('talents').doc(currentUser.uid).update(profileData);
+          alert('Perfil actualizado exitosamente');
+        } catch (error) {
+          console.error('Error updating profile:', error);
+          alert('Error al actualizar el perfil.');
+        }
+      });
+
+      // Register
+      document.getElementById('talentForm')?.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        if (!document.getElementById('accept-terms').checked) {
           alert('Debe aceptar la cláusula de responsabilidad.');
           return;
         }
         if (!mapData.location) {
-          e.preventDefault();
           alert('Por favor, defina su ubicación en el mapa antes de registrar.');
           return;
         }
+        const formData = new FormData(this);
+        const talentData = {
+          fullName: formData.get('fullName'),
+          email: formData.get('email'),
+          offerType: formData.get('offerType'),
+          profession: formData.get('profession'),
+          phone: formData.get('phone'),
+          description: formData.get('description'),
+          location: {
+            lat: ol.proj.toLonLat(mapData.location)[1],
+            lng: ol.proj.toLonLat(mapData.location)[0]
+          },
+          radius: mapData.radius
+        };
+        try {
+          const userId = currentUser ? currentUser.uid : 'anonymous';
+          await createTalent(talentData, userId);
+          alert('¡Perfil registrado exitosamente!');
+          navigateTo('profile');
+        } catch (error) {
+          console.error('Error:', error);
+          alert('Error al registrar el perfil.');
+        }
       });
     });
+
+    // Global functions
+    window.navigateTo = navigateTo;
+    window.logout = logout;
   </script>
 </body>
 </html>
+
 
 
 
