@@ -1,43 +1,66 @@
 // server.js
+// Backend de Talento Local
+// Optimizado para despliegue en Render
+
+// =============== CARGA DE DEPENDENCIAS ===============
 const express = require('express');
 const axios = require('axios');
 const nodemailer = require('nodemailer');
 const { createClient } = require('@supabase/supabase-js');
-const path = require('path');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// =============== MIDDLEWARES ===============
 app.use(express.json());
-app.use(express.static(path.join(__dirname, '.')));
+app.use(express.urlencoded({ extended: true }));
 
-// === CREDENCIALES LEÍDAS DE VARIABLES DE ENTORNO ===
+// =============== VARIABLES DE ENTORNO ===============
+// Asegura que todas las credenciales estén presentes
+const REQUIRED_ENV_VARS = [
+  'MP_ACCESS_TOKEN',
+  'SUPABASE_URL',
+  'SUPABASE_SERVICE_KEY',
+  'EMAIL_USER',
+  'EMAIL_PASS'
+];
+
+for (const envVar of REQUIRED_ENV_VARS) {
+  if (!process.env[envVar]) {
+    console.error(`❌ ERROR: '${envVar}' no está definida en las variables de entorno.`);
+    process.exit(1);
+  }
+}
+
+const MP_ACCESS_TOKEN = process.env.MP_ACCESS_TOKEN;
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY;
-const MP_ACCESS_TOKEN = process.env.MP_ACCESS_TOKEN;
-
 const EMAIL_USER = process.env.EMAIL_USER;
 const EMAIL_PASS = process.env.EMAIL_PASS;
 
-if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY || !MP_ACCESS_TOKEN) {
-  console.error('❌ Faltan variables de entorno: SUPABASE_URL, SUPABASE_SERVICE_KEY, MP_ACCESS_TOKEN');
-  process.exit(1);
-}
-
+// =============== INICIALIZACIÓN DE CLIENTES ===============
+const mp = new MercadoPago({ accessToken: MP_ACCESS_TOKEN });
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
 
-// === TRANSPORTADOR DE EMAIL ===
+// =============== TRANSPORTADOR DE EMAIL ===============
 const transporter = nodemailer.createTransporter({
-  service: 'gmail', // o el proveedor que uses
+  service: 'gmail', // Cambia si usas otro proveedor
   auth: {
     user: EMAIL_USER,
     pass: EMAIL_PASS
   }
 });
 
-// === ENDPOINT: Procesar pago (modelo Escrow) ===
+// =============== RUTA PRINCIPAL ===============
+app.get('/', (req, res) => {
+  res.status(200).send('<h1>Talento Local API</h1><p>Servidor corriendo correctamente.</p>');
+});
+
+// =============== PROCESAR PAGO (modelo Escrow) ===============
 app.post('/api/process-payment', async (req, res) => {
   const { transaction_amount, talentId, clienteId, fecha_servicio, hora_servicio } = req.body;
+
+  // Calcula comisión (5%)
   const platformCommission = Math.round(transaction_amount * 0.05);
 
   const paymentData = {
@@ -47,126 +70,157 @@ app.post('/api/process-payment', async (req, res) => {
     payment_method_id: req.body.payment_method_id,
     installments: req.body.installments || 1,
     payer: { email: req.body.payer?.email || 'test_user@test.com' },
-    application_fee: platformCommission
+    application_fee: platformCommission // ← Retención de la comisión
   };
 
   try {
     const response = await axios.post(
       'https://api.mercadopago.com/v1/payments',
       paymentData,
-      { headers: { 'Authorization': `Bearer ${MP_ACCESS_TOKEN}` } }
+      { headers: { 'Authorization': `Bearer ${MP_ACCESS_TOKEN}`, 'Content-Type': 'application/json' } }
     );
 
-    // Registrar en Supabase
-    const { data: reservationData, error: reservationError } = await supabase
+    // Guarda en Supabase
+    const { data, error } = await supabase
       .from('reservas')
       .insert([{
         talent_id: talentId,
         cliente_id: clienteId,
-        amount: transaction_amount,
-        commission: platformCommission,
-        status: response.data.status,
+        monto_total: transaction_amount,
+        comision_plataforma: platformCommission,
+        estado_pago: response.data.status,
         mp_payment_id: response.data.id,
         fecha_servicio: fecha_servicio,
-        hora_servicio: hora_servicio
+        hora_servicio: hora_servicio,
+        fecha_creacion: new Date().toISOString()
       }]);
 
-    if (reservationError) throw reservationError;
+    if (error) throw error;
 
-    res.json({ status: response.data.status, id: response.data.id });
+    res.status(200).json({
+      status: response.data.status,
+      id: response.data.id
+    });
+
   } catch (error) {
     console.error('Error en pago:', error.response?.data || error.message);
-    res.status(500).json({ error: 'Error al procesar el pago' });
+    res.status(500).json({ error: 'Error al procesar el pago', details: error.message });
   }
 });
 
-// === ENDPOINT: Webhook de Mercado Pago ===
+// =============== WEBHOOK DE MERCADOPAGO ===============
 app.post('/api/webhooks/mercadopago', async (req, res) => {
   const { type, data } = req.body;
-  if (type !== 'payment') return res.status(200).send('OK');
+
+  if (type !== 'payment') {
+    return res.status(200).send('Evento no procesado');
+  }
 
   try {
+    // Obtiene el estado del pago
     const paymentResponse = await axios.get(
       `https://api.mercadopago.com/v1/payments/${data.id}`,
       { headers: { 'Authorization': `Bearer ${MP_ACCESS_TOKEN}` } }
     );
 
     const payment = paymentResponse.data;
-    if (payment.status === 'approved') {
-      console.log('✅ Pago aprobado:', payment.id);
 
-      // Actualizar estado en Supabase
+    if (payment.status === 'approved') {
+      console.log(`✅ Pago aprobado: ${payment.id}`);
+
+      // Actualiza el estado en Supabase
       const { error } = await supabase
         .from('reservas')
-        .update({ status: 'approved' })
+        .update({ estado_pago: 'approved', fecha_aprobacion: new Date().toISOString() })
         .eq('mp_payment_id', data.id);
 
       if (error) throw error;
 
-      // Obtener datos de la reserva para enviar email
-      const { data: reserva, error: fetchError } = await supabase
-        .from('reservas')
-        .select('cliente_id, talent_id, fecha_servicio, hora_servicio')
-        .eq('mp_payment_id', data.id)
-        .single();
-
-      if (fetchError) throw fetchError;
-
-      // Simular envío de email
-      await enviarEmailConfirmacion(reserva);
+      // Enviar email de confirmación
+      await enviarEmailConfirmacion(data.id);
     }
 
     res.status(200).send('OK');
   } catch (error) {
-    console.error('Error en webhook:', error);
+    console.error('Error en webhook:', error.message);
     res.status(500).send('Error');
   }
 });
 
-// === FUNCION: Enviar Email de Confirmación ===
-async function enviarEmailConfirmacion(reserva) {
-  // Simular obtención de emails de clientes y talentos
-  // En producción, harías un join con la tabla de usuarios
-  const clienteEmail = 'cliente@ejemplo.com';
-  const talentoEmail = 'talento@ejemplo.com';
+// =============== FUNCIÓN: Enviar Email de Confirmación ===============
+async function enviarEmailConfirmacion(paymentId) {
+  // En una implementación real, aquí harías un JOIN con Supabase
+  // para obtener los emails de cliente y talento.
+
+  // Simulamos la obtención de datos
+  const reserva = await obtenerReservaPorMpId(paymentId);
+
+  if (!reserva) {
+    console.error('❌ No se encontró reserva para el pago:', paymentId);
+    return;
+  }
+
+  const clienteEmail = 'cliente@ejemplo.com'; // Obtener de Supabase
+  const talentoEmail = 'talento@ejemplo.com'; // Obtener de Supabase
 
   const mailOptions = {
     from: EMAIL_USER,
-    to: [clienteEmail, talentoEmail],
-    subject: 'Confirmación de Reserva - Talento Local',
-    text: `Hola,\n\nTu reserva ha sido confirmada.\nFecha: ${reserva.fecha_servicio}\nHora: ${reserva.hora_servicio}\n\n¡Gracias por usar Talento Local!`
+    to: [clienteEmail, talentoEmail], // Puedes enviar a ambos o individualmente
+    subject: 'Confirmación de Servicio - Talento Local',
+    text: `Hola,\n\nTu servicio ha sido confirmado con éxito.\nFecha: ${reserva.fecha_servicio}\nHora: ${reserva.hora_servicio}\n\n¡Gracias por usar Talento Local!`
   };
 
   try {
     await transporter.sendMail(mailOptions);
-    console.log('📧 Email de confirmación enviado.');
+    console.log(`📧 Email enviado para el pago ${paymentId}`);
   } catch (error) {
-    console.error('❌ Error al enviar email:', error);
+    console.error('❌ Error al enviar email:', error.message);
   }
 }
 
-// === ENDPOINT: Enviar Reseña ===
+// =============== FUNCIÓN AUXILIAR: Obtener reserva ===============
+async function obtenerReservaPorMpId(mpPaymentId) {
+  const { data, error } = await supabase
+    .from('reservas')
+    .select('cliente_id, talent_id, fecha_servicio, hora_servicio')
+    .eq('mp_payment_id', mpPaymentId)
+    .single();
+
+  if (error) {
+    console.error('Error al buscar reserva:', error.message);
+    return null;
+  }
+
+  return data;
+}
+
+// =============== ENDPOINT: Enviar Reseña ===============
 app.post('/api/submit-review', async (req, res) => {
   const { talento_id, cliente_id, rating, comentario, reserva_id } = req.body;
 
-  if (!talento_id || !cliente_id || !rating || !reserva_id) {
-    return res.status(400).json({ error: 'Faltan campos obligatorios.' });
+  if (!talento_id || !cliente_id || !rating || !reserva_id || rating < 1 || rating > 5) {
+    return res.status(400).json({ error: 'Datos inválidos para la reseña.' });
   }
 
   try {
     const { data, error } = await supabase
-      .from('reviews')
-      .insert([{ talento_id, cliente_id, rating, comentario, reserva_id }]);
+      .from('reseñas')
+      .insert([{ talento_id, cliente_id, rating, comentario, reserva_id, fecha: new Date().toISOString() }]);
 
     if (error) throw error;
 
-    res.status(200).json({ message: 'Reseña enviada exitosamente.' });
+    res.status(200).json({ message: 'Reseña guardada exitosamente.' });
   } catch (error) {
-    console.error('Error en reseña:', error);
-    res.status(500).json({ error: 'Error al enviar la reseña.' });
+    console.error('Error al guardar reseña:', error.message);
+    res.status(500).json({ error: 'Error al guardar la reseña.' });
   }
 });
 
-app.listen(PORT, () => {
-  console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);
+// =============== SERVIDOR ===============
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`🚀 Servidor corriendo en puerto ${PORT}`);
+  console.log(`🌍 Disponible en: http://localhost:${PORT}`);
+  console.log(`🔐 Modo: ${process.env.NODE_ENV || 'development'}`);
 });
+
+module.exports = app;
