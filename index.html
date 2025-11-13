@@ -276,24 +276,6 @@
       border-color: var(--secondary);
       box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.15);
     }
-    .legal-notice {
-      margin-top: 20px;
-      padding: 16px;
-      background: #fff9db;
-      border: 1px solid var(--warning);
-      border-radius: var(--radius);
-      font-size: 0.95rem;
-      color: var(--gray-800);
-    }
-    .legal-checkbox {
-      margin-top: 16px;
-      display: flex;
-      align-items: start;
-      gap: 12px;
-    }
-    .legal-checkbox input {
-      margin-top: 4px;
-    }
     .form-actions {
       display: flex;
       gap: 20px;
@@ -339,6 +321,12 @@
     .map-info p {
       margin: 8px 0;
       font-weight: 600;
+    }
+    .warning-text {
+      font-size: 0.9rem;
+      color: var(--warning);
+      font-style: italic;
+      margin-top: 8px;
     }
     .products-grid {
       display: grid;
@@ -439,6 +427,8 @@
       color: var(--gray-600);
       font-size: 1.1rem;
       border-top: 1px solid rgba(255,255,255,0.3);
+      backdrop-filter: blur(10px);
+      background: rgba(255,255,255,0.1);
     }
     #payment-brick-container {
       width: 100%;
@@ -456,11 +446,6 @@
       font-weight: 700;
       margin-bottom: 24px;
       color: var(--gray-800);
-    }
-    .warning-text {
-      font-size: 0.9rem;
-      color: var(--warning);
-      font-style: italic;
     }
     @media (max-width: 900px) {
       header {
@@ -566,7 +551,7 @@
         <input type="text" id="talents-search" placeholder="Buscar talentos por nombre, profesión o ubicación...">
       </div>
       <div id="talents-list" class="products-grid">
-        <!-- Ejemplo de talentos -->
+        <!-- Ejemplo de talento -->
         <div class="product-card">
           <div class="product-image">Foto</div>
           <h4>Ana López</h4>
@@ -634,11 +619,11 @@
             <label for="description">Perfil Profesional (opcional)</label>
             <textarea id="description" name="description" rows="4" placeholder="Describa su experiencia, certificaciones y enfoque profesional..."></textarea>
           </div>
-          <!-- === SECCIÓN DE UBICACIÓN OBLIGATORIA === -->
+          <!-- === NUEVO: Sección de Zona de Operaciones === -->
           <div class="form-group">
             <label>Zona de Operaciones *</label>
             <div class="map-info">
-              <p><strong>Ubicación en el mapa:</strong> <span id="form-location">No definida</span></p>
+              <p><strong>Ubicación:</strong> <span id="form-location">No definida</span></p>
               <p><strong>Radio de cobertura:</strong> <span id="form-radius">0</span> metros</p>
               <p class="warning-text">* Haga clic en el mapa y ajuste el radio antes de registrar.</p>
             </div>
@@ -647,12 +632,12 @@
             <strong>CLÁUSULA DE LIMITACIÓN DE RESPONSABILIDAD:</strong> Talento Local actúa únicamente como intermediario entre profesionales y clientes. No asume responsabilidad por la calidad, legalidad o cumplimiento de los servicios o productos ofrecidos por los usuarios de la plataforma.
           </div>
           <div class="legal-checkbox">
-            <input type="checkbox" id="accept-terms" required>
+            <input type="checkbox" id="accept-terms" name="acceptTerms" required>
             <label for="accept-terms">Acepto la <strong>Cláusula de Limitación de Responsabilidad</strong>.</label>
           </div>
           <div class="form-actions">
             <button type="submit" class="btn">Registrar Perfil Profesional</button>
-            <button type="button" class="btn btn-outline" id="define-location-btn">Ir al Mapa</button>
+            <button type="button" class="btn btn-outline" id="define-location-btn">Definir Ubicación</button>
           </div>
         </form>
       </div>
@@ -673,11 +658,11 @@
         <form id="profileForm">
           <div class="form-group">
             <label for="profileFullName">Nombre Completo *</label>
-            <input type="text" id="profileFullName" required>
+            <input type="text" id="profileFullName" name="fullName" required>
           </div>
           <div class="form-group">
             <label for="profileOfferType">Tipo de Oferta *</label>
-            <select id="profileOfferType" required>
+            <select id="profileOfferType" name="offerType" required>
               <option value="services">Solo servicios</option>
               <option value="products">Solo productos</option>
               <option value="both">Ambos</option>
@@ -685,7 +670,7 @@
           </div>
           <div class="form-group">
             <label for="profileProfession">Especialidad Profesional *</label>
-            <select id="profileProfession" required>
+            <select id="profileProfession" name="profession" required>
               <option value="">Seleccione su especialidad</option>
               <option value="carpintero">Carpintería de Alta Gama</option>
               <option value="electricista">Electricista Certificado</option>
@@ -699,11 +684,20 @@
           </div>
           <div class="form-group">
             <label for="profilePhone">Teléfono Corporativo *</label>
-            <input type="tel" id="profilePhone" required>
+            <input type="tel" id="profilePhone" name="phone" required>
           </div>
           <div class="form-group">
             <label for="profileDescription">Perfil Profesional</label>
-            <textarea id="profileDescription" rows="4"></textarea>
+            <textarea id="profileDescription" name="description" rows="4"></textarea>
+          </div>
+          <!-- === NUEVO: Zona de Operaciones en Perfil === -->
+          <div class="form-group">
+            <label>Zona de Operaciones</label>
+            <div class="map-info">
+              <p><strong>Ubicación actual:</strong> <span id="profile-location">No definida</span></p>
+              <p><strong>Radio de cobertura:</strong> <span id="profile-radius">0</span> metros</p>
+              <p class="warning-text">* Puede actualizarla desde la Plataforma.</p>
+            </div>
           </div>
           <div class="form-actions">
             <button type="submit" class="btn">Guardar Cambios</button>
@@ -723,11 +717,11 @@
         <form id="loginForm">
           <div class="form-group">
             <label for="loginEmail">Correo Electrónico *</label>
-            <input type="email" id="loginEmail" required>
+            <input type="email" id="loginEmail" name="email" required>
           </div>
           <div class="form-group">
             <label for="loginPassword">Contraseña *</label>
-            <input type="password" id="loginPassword" required>
+            <input type="password" id="loginPassword" name="password" required>
           </div>
           <div class="form-actions">
             <button type="submit" class="btn">Iniciar Sesión</button>
@@ -784,8 +778,9 @@
     let pointFeature = null;
     let circleFeature = null;
     let vectorSource = null;
-    let currentRadius = 0;
+    let currentRadius = 0; // metros
     let currentUser = null;
+    let selectedHire = null;
 
     // =============== MAP FUNCTIONS ===============
     function initializeMap() {
@@ -871,6 +866,375 @@
       document.getElementById('location-coords').textContent = `${lonLat[1].toFixed(4)}°, ${lonLat[0].toFixed(4)}°`;
       document.getElementById('coverage-radius').textContent = Math.round(radius);
       document.getElementById('radio-value').textContent = Math.round(radius);
-      // Actualizar tam
+      // Actualizar también en el formulario de registro
+      const formLocation = document.getElementById('form-location');
+      const formRadius = document.getElementById('form-radius');
+      if (formLocation && formRadius) {
+        formLocation.textContent = `${lonLat[1].toFixed(4)}°, ${lonLat[0].toFixed(4)}°`;
+        formRadius.textContent = Math.round(radius);
+      }
+      // Actualizar también en el perfil
+      const profileLocation = document.getElementById('profile-location');
+      const profileRadius = document.getElementById('profile-radius');
+      if (profileLocation && profileRadius) {
+        profileLocation.textContent = `${lonLat[1].toFixed(4)}°, ${lonLat[0].toFixed(4)}°`;
+        profileRadius.textContent = Math.round(radius);
+      }
+    }
 
+    function enableRadiusControls() {
+      const decreaseBtn = document.getElementById('decreaseRadius');
+      const increaseBtn = document.getElementById('increaseRadius');
+      if (decreaseBtn && increaseBtn) {
+        decreaseBtn.disabled = false;
+        increaseBtn.disabled = false;
+      }
+    }
 
+    function adjustRadius(delta) {
+      if (!pointFeature) return;
+      currentRadius = Math.max(0, currentRadius + delta);
+      const coord = pointFeature.getGeometry().getCoordinates();
+      if (circleFeature) {
+        vectorSource.removeFeature(circleFeature);
+        circleFeature = null;
+      }
+      if (currentRadius > 0) {
+        updateCircle(coord, currentRadius);
+        document.getElementById('radio-display').classList.add('active');
+      } else {
+        document.getElementById('radio-display').classList.remove('active');
+      }
+      updateMapInfo(coord, currentRadius);
+      mapData.location = coord;
+      mapData.radius = currentRadius;
+    }
+
+    // =============== NAVIGATION ===============
+    function navigateTo(viewName) {
+      document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
+      document.getElementById(`${viewName}-view`)?.classList.add('active');
+      document.querySelectorAll('.nav-link').forEach(el => el.classList.remove('active'));
+      document.getElementById(`nav-${viewName}`)?.classList.add('active');
+      if (viewName === 'home' && !mapInitialized) initializeMap();
+    }
+
+    // =============== AUTH FUNCTIONS ===============
+    async function login(email, password) {
+      if (!auth) {
+        alert('Funcionalidad de autenticación no disponible.');
+        return;
+      }
+      try {
+        const userCredential = await auth.signInWithEmailAndPassword(email, password);
+        currentUser = userCredential.user;
+        return userCredential.user;
+      } catch (error) {
+        alert('Error en el inicio de sesión: ' + error.message);
+        throw error;
+      }
+    }
+
+    async function register(email, password) {
+      if (!auth) {
+        alert('Funcionalidad de registro no disponible.');
+        return;
+      }
+      try {
+        const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+        currentUser = userCredential.user;
+        return userCredential.user;
+      } catch (error) {
+        alert('Error en el registro: ' + error.message);
+        throw error;
+      }
+    }
+
+    function logout() {
+      if (!auth) return;
+      auth.signOut().then(() => {
+        currentUser = null;
+        updateUIBasedOnAuthState(null);
+        navigateTo('home');
+      });
+    }
+
+    // =============== DATABASE FUNCTIONS ===============
+    async function createTalent(talentData, userId) {
+      if (!db) {
+        alert('Base de datos no disponible. Guardando localmente...');
+        localStorage.setItem('talentData', JSON.stringify(talentData));
+        return 'local';
+      }
+      const talent = {
+        ...talentData,
+        userId: userId,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+        verification: { email: true, phone: false, id: false, portfolio: false, level: 'basic' },
+        boostExpiry: null,
+        isPremium: false
+      };
+      const docRef = await db.collection('talents').add(talent);
+      return docRef.id;
+    }
+
+    async function getTalentByUserId(userId) {
+      if (!db) {
+        const localData = localStorage.getItem('talentData');
+        if (localData) return JSON.parse(localData);
+        return null;
+      }
+      const snapshot = await db.collection('talents').where('userId', '==', userId).limit(1).get();
+      if (snapshot.empty) return null;
+      const doc = snapshot.docs[0];
+      return { id: doc.id, ...doc.data() };
+    }
+
+    // =============== UI FUNCTIONS ===============
+    function updateUIBasedOnAuthState(user) {
+      const profileLink = document.getElementById('nav-profile');
+      const loginLink = document.getElementById('nav-login');
+      if (user && profileLink && loginLink) {
+        profileLink.style.display = 'block';
+        loginLink.style.display = 'none';
+        loadProfileData();
+      } else if (profileLink && loginLink) {
+        profileLink.style.display = 'none';
+        loginLink.style.display = 'block';
+      }
+    }
+
+    function loadProfileData() {
+      if (!currentUser) return;
+      getTalentByUserId(currentUser.uid).then(talent => {
+        if (talent) {
+          document.getElementById('profile-name').textContent = talent.fullName;
+          document.getElementById('profile-email').textContent = currentUser.email || 'email@profesional.com';
+          document.getElementById('profileFullName').value = talent.fullName;
+          document.getElementById('profileOfferType').value = talent.offerType || 'services';
+          document.getElementById('profileProfession').value = talent.profession;
+          document.getElementById('profilePhone').value = talent.phone;
+          document.getElementById('profileDescription').value = talent.description || '';
+          // Cargar datos del mapa
+          if (talent.location) {
+            const loc = talent.location;
+            const center = ol.proj.fromLonLat([loc.lng, loc.lat]);
+            createOrUpdateMarker(center);
+            if (talent.radius) {
+              currentRadius = talent.radius;
+              updateCircle(center, talent.radius);
+              document.getElementById('radio-display').classList.add('active');
+            }
+            updateMapInfo(center, talent.radius || 0);
+            mapData.location = center;
+            mapData.radius = talent.radius || 0;
+          }
+        }
+      }).catch(console.error);
+    }
+
+    // =============== PAYMENT BRICK ===============
+    const mp = new MercadoPago('APP_USR-3054818d-0bb9-4459-b940-94b1df582627'); // LIVE Public Key
+    let paymentInitialized = false;
+
+    async function initializePaymentBrick() {
+      if (!selectedHire) return;
+      const amount = selectedHire.amount;
+
+      const settings = {
+        initialization: {
+          amount: amount,
+          country: 'ARG',     // <-- ¡Crucial!
+          locale: 'es-AR'     // <-- Para que aparezca "Mercado Pago"
+        },
+        customization: {
+          paymentMethods: {
+            creditCard: 'all',
+            debitCard: 'all',
+            ticket: 'all',
+            bankTransfer: 'all',
+            mercadoPago: 'all'  // <-- Ahora sí se mostrará
+          }
+        },
+        callbacks: {
+          onReady: () => console.log('Brick listo'),
+          onSubmit: async (formData) => {
+            try {
+              const response = await fetch('/api/process-payment', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ...formData, transaction_amount: amount, talentId: selectedHire.id })
+              });
+              const result = await response.json();
+              if (result.status === 'approved') {
+                alert(`¡Pago aprobado! Has contratado a ${selectedHire.name}.`);
+                navigateTo('home');
+              } else {
+                alert('Pago rechazado.');
+              }
+            } catch (error) {
+              console.error('Error:', error);
+              alert('Error al procesar el pago.');
+            }
+          },
+          onError: (error) => console.error('Error en Brick:', error)
+        }
+      };
+
+      const bricksBuilder = mp.bricks();
+      const container = document.getElementById('payment-brick-container');
+      container.innerHTML = '';
+      await bricksBuilder.create('payment', 'payment-brick-container', settings);
+    }
+
+    // =============== EVENT LISTENERS ===============
+    document.addEventListener('DOMContentLoaded', () => {
+      initializeMap();
+
+      // Navigation
+      document.querySelectorAll('.nav-link').forEach(link => {
+        link.addEventListener('click', function(e) {
+          e.preventDefault();
+          const viewName = this.id.replace('nav-', '');
+          navigateTo(viewName);
+        });
+      });
+
+      // Radius controls
+      document.getElementById('decreaseRadius')?.addEventListener('click', () => adjustRadius(-200));
+      document.getElementById('increaseRadius')?.addEventListener('click', () => adjustRadius(200));
+
+      // Botón "Definir Ubicación" en el formulario de registro
+      document.getElementById('define-location-btn')?.addEventListener('click', () => navigateTo('home'));
+
+      // Contratar / Comprar
+      document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('hire-btn')) {
+          const card = e.target.closest('.product-card');
+          const select = card.querySelector('.payment-mode');
+          const mode = select.value;
+          const rates = {
+            hourly: parseFloat(select.dataset.hourly),
+            weekly: parseFloat(select.dataset.weekly),
+            biweekly: parseFloat(select.dataset.biweekly),
+            monthly: parseFloat(select.dataset.monthly)
+          };
+          const amount = rates[mode] || 0;
+          selectedHire = {
+            name: e.target.dataset.name,
+            id: e.target.dataset.id,
+            amount,
+            mode
+          };
+          document.getElementById('hire-name').textContent = selectedHire.name;
+          document.getElementById('payment-amount').textContent = `Total: ${new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(amount)}`;
+          navigateTo('payment');
+        }
+      });
+
+      // Volver a talentos
+      document.getElementById('back-to-talents-btn')?.addEventListener('click', () => navigateTo('talents'));
+
+      // Logout
+      document.getElementById('logout-btn')?.addEventListener('click', () => logout());
+
+      // Login
+      document.getElementById('loginForm')?.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const email = document.getElementById('loginEmail').value;
+        const password = document.getElementById('loginPassword').value;
+        try {
+          await login(email, password);
+          navigateTo('profile');
+        } catch (error) {
+          console.error('Login error:', error);
+        }
+      });
+
+      // Register
+      document.getElementById('talentForm')?.addEventListener('submit', async function(e) {
+        e.preventDefault();
+
+        // ✅ Validación: Aceptar términos
+        if (!document.getElementById('accept-terms').checked) {
+          alert('Debe aceptar la cláusula de responsabilidad.');
+          return;
+        }
+
+        // ✅ Validación: Ubicación definida en el mapa
+        if (!mapData.location) {
+          alert('Por favor, defina su ubicación en el mapa antes de registrar.');
+          return;
+        }
+
+        const formData = new FormData(this);
+        const talentData = {
+          fullName: formData.get('fullName'),
+          email: formData.get('email'),
+          offerType: formData.get('offerType'),
+          profession: formData.get('profession'),
+          phone: formData.get('phone'),
+          description: formData.get('description'),
+          // ✅ Nueva: Información del mapa
+          location: {
+            lat: ol.proj.toLonLat(mapData.location)[1],
+            lng: ol.proj.toLonLat(mapData.location)[0]
+          },
+          radius: mapData.radius
+        };
+
+        try {
+          const userId = currentUser ? currentUser.uid : 'anonymous';
+          await createTalent(talentData, userId);
+          alert('¡Perfil registrado exitosamente!');
+          navigateTo('profile');
+        } catch (error) {
+          console.error('Error:', error);
+          alert('Error al registrar el perfil.');
+        }
+      });
+
+      // Profile
+      document.getElementById('profileForm')?.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        if (!currentUser) return;
+        const profileData = {
+          fullName: document.getElementById('profileFullName').value,
+          offerType: document.getElementById('profileOfferType').value,
+          profession: document.getElementById('profileProfession').value,
+          phone: document.getElementById('profilePhone').value,
+          description: document.getElementById('profileDescription').value,
+          // ✅ Actualizar también la ubicación si cambió
+          location: {
+            lat: ol.proj.toLonLat(mapData.location)[1],
+            lng: ol.proj.toLonLat(mapData.location)[0]
+          },
+          radius: mapData.radius
+        };
+        try {
+          await db.collection('talents').doc(currentUser.uid).update(profileData);
+          alert('Perfil actualizado exitosamente');
+        } catch (error) {
+          console.error('Error updating profile:', error);
+          alert('Error al actualizar el perfil.');
+        }
+      });
+    });
+
+    // Observer para Payment Brick
+    const observer = new MutationObserver(() => {
+      if (document.getElementById('payment-view')?.classList.contains('active') && !paymentInitialized) {
+        initializePaymentBrick();
+        paymentInitialized = true;
+      } else {
+        paymentInitialized = false;
+      }
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+
+    // Global functions
+    window.navigateTo = navigateTo;
+    window.logout = logout;
+  </script>
+</body>
+</html>
