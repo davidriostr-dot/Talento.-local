@@ -1,64 +1,48 @@
 // server.js
 // Backend de Talento Local
-// Optimizado para despliegue en Render
+// Con integración de mejora automática por IA
 
-// =============== CARGA DE DEPENDENCIAS ===============
 const express = require('express');
 const axios = require('axios');
-const nodemailer = require('nodemailer');
 const { createClient } = require('@supabase/supabase-js');
+const nodemailer = require('nodemailer');
+const path = require('path');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// =============== MIDDLEWARES ===============
 app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.static(path.join(__dirname, '.')));
 
-// =============== VARIABLES DE ENTORNO ===============
-// Asegura que todas las credenciales estén presentes
-const REQUIRED_ENV_VARS = [
-  'MP_ACCESS_TOKEN',
-  'SUPABASE_URL',
-  'SUPABASE_SERVICE_KEY',
-  'EMAIL_USER',
-  'EMAIL_PASS'
-];
-
-for (const envVar of REQUIRED_ENV_VARS) {
-  if (!process.env[envVar]) {
-    console.error(`❌ ERROR: '${envVar}' no está definida en las variables de entorno.`);
-    process.exit(1);
-  }
-}
-
-const MP_ACCESS_TOKEN = process.env.MP_ACCESS_TOKEN;
+// === CREDENCIALES DESDE VARIABLES DE ENTORNO (obligatorio para Render) ===
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY;
+const MP_ACCESS_TOKEN = process.env.MP_ACCESS_TOKEN;
+
+// Validar que todas las variables estén presentes
+if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY || !MP_ACCESS_TOKEN) {
+  console.error('❌ Faltan variables de entorno: SUPABASE_URL, SUPABASE_SERVICE_KEY, MP_ACCESS_TOKEN');
+  process.exit(1);
+}
+
+const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
+
+// === TRANSPORTADOR DE EMAIL ===
 const EMAIL_USER = process.env.EMAIL_USER;
 const EMAIL_PASS = process.env.EMAIL_PASS;
 
-// =============== INICIALIZACIÓN DE CLIENTES ===============
-const mp = new MercadoPago({ accessToken: MP_ACCESS_TOKEN });
-const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
+if (!EMAIL_USER || !EMAIL_PASS) {
+  console.warn('⚠️ Variables de email no configuradas. Las notificaciones estarán deshabilitadas.');
+}
 
-// =============== TRANSPORTADOR DE EMAIL ===============
-const transporter = nodemailer.createTransporter({
-  service: 'gmail', // Cambia si usas otro proveedor
-  auth: {
-    user: EMAIL_USER,
-    pass: EMAIL_PASS
-  }
-});
+const transporter = EMAIL_USER && EMAIL_PASS ? nodemailer.createTransporter({
+  service: 'gmail',
+  auth: { user: EMAIL_USER, pass: EMAIL_PASS }
+}) : null;
 
-// =============== RUTA PRINCIPAL ===============
-app.get('/', (req, res) => {
-  res.status(200).send('<h1>Talento Local API</h1><p>Servidor corriendo correctamente.</p>');
-});
-
-// =============== PROCESAR PAGO (modelo Escrow) ===============
+// === ENDPOINT: Procesar pago (modelo Escrow) ===
 app.post('/api/process-payment', async (req, res) => {
-  const { transaction_amount, talentId, clienteId, fecha_servicio, hora_servicio } = req.body;
+  const { transaction_amount, talentId } = req.body;
 
   // Calcula comisión (5%)
   const platformCommission = Math.round(transaction_amount * 0.05);
@@ -85,30 +69,27 @@ app.post('/api/process-payment', async (req, res) => {
       .from('reservas')
       .insert([{
         talent_id: talentId,
-        cliente_id: clienteId,
         monto_total: transaction_amount,
         comision_plataforma: platformCommission,
         estado_pago: response.data.status,
         mp_payment_id: response.data.id,
-        fecha_servicio: fecha_servicio,
-        hora_servicio: hora_servicio,
         fecha_creacion: new Date().toISOString()
       }]);
 
     if (error) throw error;
 
-    res.status(200).json({
+    res.json({
       status: response.data.status,
       id: response.data.id
     });
 
   } catch (error) {
     console.error('Error en pago:', error.response?.data || error.message);
-    res.status(500).json({ error: 'Error al procesar el pago', details: error.message });
+    res.status(500).json({ error: 'Error al procesar el pago' });
   }
 });
 
-// =============== WEBHOOK DE MERCADOPAGO ===============
+// === ENDPOINT: Webhook de Mercado Pago ===
 app.post('/api/webhooks/mercadopago', async (req, res) => {
   const { type, data } = req.body;
 
@@ -128,7 +109,7 @@ app.post('/api/webhooks/mercadopago', async (req, res) => {
     if (payment.status === 'approved') {
       console.log(`✅ Pago aprobado: ${payment.id}`);
 
-      // Actualiza el estado en Supabase
+      // Actualizar estado en Supabase
       const { error } = await supabase
         .from('reservas')
         .update({ estado_pago: 'approved', fecha_aprobacion: new Date().toISOString() })
@@ -142,59 +123,61 @@ app.post('/api/webhooks/mercadopago', async (req, res) => {
 
     res.status(200).send('OK');
   } catch (error) {
-    console.error('Error en webhook:', error.message);
+    console.error('❌ Error en webhook:', error);
     res.status(500).send('Error');
   }
 });
 
-// =============== FUNCIÓN: Enviar Email de Confirmación ===============
+// === FUNCIÓN: Enviar email de confirmación ===
 async function enviarEmailConfirmacion(paymentId) {
   // En una implementación real, aquí harías un JOIN con Supabase
   // para obtener los emails de cliente y talento.
 
   // Simulamos la obtención de datos
-  const reserva = await obtenerReservaPorMpId(paymentId);
+  const { data: reserva, error: fetchError } = await supabase
+    .from('reservas')
+    .select(`
+      cliente_id, talent_id,
+      clientes (email, nombre_completo),
+      talentos (nombre_negocio, usuario_id, usuarios(email, nombre_completo))
+    `)
+    .eq('mp_payment_id', paymentId)
+    .single();
 
-  if (!reserva) {
-    console.error('❌ No se encontró reserva para el pago:', paymentId);
+  if (fetchError) {
+    console.error('Error al obtener datos de reserva:', fetchError);
     return;
   }
 
-  const clienteEmail = 'cliente@ejemplo.com'; // Obtener de Supabase
-  const talentoEmail = 'talento@ejemplo.com'; // Obtener de Supabase
+  const clienteEmail = reserva.clientes.email;
+  const clienteNombre = reserva.clientes.nombre_completo;
+  const talentoEmail = reserva.talentos.usuarios.email;
+  const talentoNombre = reserva.talentos.nombre_negocio || reserva.talentos.usuarios.nombre_completo;
 
-  const mailOptions = {
-    from: EMAIL_USER,
-    to: [clienteEmail, talentoEmail], // Puedes enviar a ambos o individualmente
-    subject: 'Confirmación de Servicio - Talento Local',
-    text: `Hola,\n\nTu servicio ha sido confirmado con éxito.\nFecha: ${reserva.fecha_servicio}\nHora: ${reserva.hora_servicio}\n\n¡Gracias por usar Talento Local!`
-  };
+  const html = `
+    <h2>🎉 Pago Aprobado</h2>
+    <p>Hola ${clienteNombre},</p>
+    <p>El pago por su reserva con <strong>${talentoNombre}</strong> ha sido <strong>aprobado exitosamente</strong>.</p>
+    <p>Fecha del servicio: ${new Date(reserva.fecha_hora).toLocaleString()}</p>
+    <p>¡Gracias por usar Talento Local!</p>
+  `;
 
-  try {
-    await transporter.sendMail(mailOptions);
-    console.log(`📧 Email enviado para el pago ${paymentId}`);
-  } catch (error) {
-    console.error('❌ Error al enviar email:', error.message);
+  if (transporter) {
+    try {
+      await transporter.sendMail({
+        from: EMAIL_USER,
+        to: [clienteEmail, talentoEmail],
+        subject: 'Pago Aprobado - Talento Local',
+        html
+      });
+      console.log(`📧 Email enviado para el pago ${paymentId}`);
+    } catch (error) {
+      console.error('❌ Error al enviar email:', error);
+    }
   }
 }
 
-// =============== FUNCIÓN AUXILIAR: Obtener reserva ===============
-async function obtenerReservaPorMpId(mpPaymentId) {
-  const { data, error } = await supabase
-    .from('reservas')
-    .select('cliente_id, talent_id, fecha_servicio, hora_servicio')
-    .eq('mp_payment_id', mpPaymentId)
-    .single();
-
-  if (error) {
-    console.error('Error al buscar reserva:', error.message);
-    return null;
-  }
-
-  return data;
-}
-
-// =============== ENDPOINT: Enviar Reseña ===============
+// === ENDPOINT: Sistema de Calificación y Reseñas ===
 app.post('/api/submit-review', async (req, res) => {
   const { talento_id, cliente_id, rating, comentario, reserva_id } = req.body;
 
@@ -205,22 +188,150 @@ app.post('/api/submit-review', async (req, res) => {
   try {
     const { data, error } = await supabase
       .from('reseñas')
-      .insert([{ talento_id, cliente_id, rating, comentario, reserva_id, fecha: new Date().toISOString() }]);
+      .insert([{ talento_id, cliente_id, rating, comentario, reserva_id, created_at: new Date().toISOString() }]);
 
     if (error) throw error;
+
+    // Actualizar rating promedio del talento
+    const { data: reseñas, error: fetchError } = await supabase
+      .from('reseñas')
+      .select('rating')
+      .eq('talento_id', talento_id);
+
+    if (fetchError) throw fetchError;
+
+    const avgRating = reseñas.reduce((acc, r) => acc + r.rating, 0) / reseñas.length;
+    const { error: updateError } = await supabase
+      .from('talentos')
+      .update({ rating_promedio: avgRating, total_reseñas: reseñas.length })
+      .eq('id', talento_id);
+
+    if (updateError) throw updateError;
 
     res.status(200).json({ message: 'Reseña guardada exitosamente.' });
   } catch (error) {
     console.error('Error al guardar reseña:', error.message);
-    res.status(500).json({ error: 'Error al guardar la reseña.' });
+    res.status(500).json({ error: 'Error al guardar la reseña.', details: error.message });
   }
 });
 
-// =============== SERVIDOR ===============
-app.listen(PORT, '0.0.0.0', () => {
+// === NUEVO: Endpoint de mejora automática por IA ===
+const { Octokit } = require('@octokit/rest');
+const OpenAI = require('openai');
+
+const octokit = new Octokit({ auth: process.env.GITHUB_TOKEN });
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+const owner = process.env.REPO_OWNER;
+const repo = process.env.REPO_NAME;
+const baseBranch = process.env.BASE_BRANCH || 'main';
+const autoPrefix = process.env.AUTO_BRANCH_PREFIX || 'auto-improve';
+
+app.post('/api/improve', async (req, res) => {
+  if (!owner || !repo || !openai.apiKey || !process.env.GITHUB_TOKEN) {
+    return res.status(500).json({ error: 'Faltan credenciales para GitHub o OpenAI.' });
+  }
+
+  try {
+    // 1. Obtener el contenido del README
+    const { data: file } = await octokit.repos.getContent({
+      owner,
+      repo,
+      path: 'README.md',
+      ref: baseBranch,
+    });
+
+    const content = Buffer.from(file.content, 'base64').toString('utf8');
+
+    // 2. Analizar con OpenAI
+    const prompt = `
+Eres un ingeniero de software experto y diseñador UX. 
+Analiza este código o documentación y crea una versión mejorada:
+- Limpia errores o malas prácticas
+- Mejora la organización del texto o código
+- Sugerí optimizaciones técnicas o de diseño visual
+- No elimines información útil
+
+Contenido actual:
+${content}
+`;
+
+    const aiResponse = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages: [{ role: 'user', content: prompt }],
+    });
+
+    const improved = aiResponse.choices[0].message.content;
+
+    // 3. Crear nueva rama
+    const branchName = `${autoPrefix}-${Date.now()}`;
+    const { data: refData } = await octokit.git.getRef({
+      owner,
+      repo,
+      ref: `heads/${baseBranch}`,
+    });
+
+    await octokit.git.createRef({
+      owner,
+      repo,
+      ref: `refs/heads/${branchName}`,
+      sha: refData.object.sha,
+    });
+
+    // 4. Subir cambios a la nueva rama
+    await octokit.repos.createOrUpdateFileContents({
+      owner,
+      repo,
+      path: 'README.md',
+      message: '🤖 Mejora automática generada por IA',
+      content: Buffer.from(improved).toString('base64'),
+      branch: branchName,
+    });
+
+    // 5. Crear Pull Request
+    const pr = await octokit.pulls.create({
+      owner,
+      repo,
+      title: '✨ Mejora automática (IA)',
+      head: branchName,
+      base: baseBranch,
+      body: 'Este Pull Request fue generado automáticamente por la IA de mejora continua.',
+    });
+
+    // 6. Guardar log en Supabase
+    const { error: logError } = await supabase
+      .from('auto_logs')
+      .insert({
+        action: 'improve',
+        branch: branchName,
+        pr_url: pr.data.html_url,
+        timestamp: new Date().toISOString(),
+      });
+
+    if (logError) throw logError;
+
+    res.json({
+      success: true,
+      message: 'Pull Request creado con éxito',
+      pull_request: pr.data.html_url,
+    });
+  } catch (err) {
+    console.error('❌ Error en /api/improve:', err);
+    res.status(500).json({
+      success: false,
+      error: err.message,
+    });
+  }
+});
+
+// Ruta raíz
+app.get('/', (req, res) => {
+  res.send('🚀 Talento Local Backend conectado correctamente');
+});
+
+// Iniciar servidor
+app.listen(PORT, () => {
   console.log(`🚀 Servidor corriendo en puerto ${PORT}`);
   console.log(`🌍 Disponible en: http://localhost:${PORT}`);
   console.log(`🔐 Modo: ${process.env.NODE_ENV || 'development'}`);
 });
-
-module.exports = app;
