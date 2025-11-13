@@ -1,6 +1,7 @@
 // server.js
 // Backend de Talento Local
-// Con integración de mejora automática por IA
+// Optimizado para despliegue en Render
+// Incluye integración de mejora automática por IA
 
 const express = require('express');
 const axios = require('axios');
@@ -9,19 +10,23 @@ const nodemailer = require('nodemailer');
 const path = require('path');
 
 const app = express();
+// ✅ Puerto dinámico para Render
 const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '.')));
 
-// === CREDENCIALES DESDE VARIABLES DE ENTORNO (obligatorio para Render) ===
+// === CREDENCIALES DESDE VARIABLES DE ENTORNO ===
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY;
 const MP_ACCESS_TOKEN = process.env.MP_ACCESS_TOKEN;
+const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+const REPO_OWNER = process.env.REPO_OWNER;
+const REPO_NAME = process.env.REPO_NAME;
 
-// Validar que todas las variables estén presentes
 if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY || !MP_ACCESS_TOKEN) {
-  console.error('❌ Faltan variables de entorno: SUPABASE_URL, SUPABASE_SERVICE_KEY, MP_ACCESS_TOKEN');
+  console.error('❌ Faltan variables de entorno críticas: SUPABASE_URL, SUPABASE_SERVICE_KEY, MP_ACCESS_TOKEN');
   process.exit(1);
 }
 
@@ -31,10 +36,6 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
 const EMAIL_USER = process.env.EMAIL_USER;
 const EMAIL_PASS = process.env.EMAIL_PASS;
 
-if (!EMAIL_USER || !EMAIL_PASS) {
-  console.warn('⚠️ Variables de email no configuradas. Las notificaciones estarán deshabilitadas.');
-}
-
 const transporter = EMAIL_USER && EMAIL_PASS ? nodemailer.createTransporter({
   service: 'gmail',
   auth: { user: EMAIL_USER, pass: EMAIL_PASS }
@@ -43,9 +44,7 @@ const transporter = EMAIL_USER && EMAIL_PASS ? nodemailer.createTransporter({
 // === ENDPOINT: Procesar pago (modelo Escrow) ===
 app.post('/api/process-payment', async (req, res) => {
   const { transaction_amount, talentId } = req.body;
-
-  // Calcula comisión (5%)
-  const platformCommission = Math.round(transaction_amount * 0.05);
+  const platformCommission = Math.round(transaction_amount * 0.05); // 5%
 
   const paymentData = {
     transaction_amount: transaction_amount,
@@ -134,7 +133,7 @@ async function enviarEmailConfirmacion(paymentId) {
   // para obtener los emails de cliente y talento.
 
   // Simulamos la obtención de datos
-  const { data: reserva, error: fetchError } = await supabase
+  const {  reserva, error: fetchError } = await supabase
     .from('reservas')
     .select(`
       cliente_id, talent_id,
@@ -193,7 +192,7 @@ app.post('/api/submit-review', async (req, res) => {
     if (error) throw error;
 
     // Actualizar rating promedio del talento
-    const { data: reseñas, error: fetchError } = await supabase
+    const {  reseñas, error: fetchError } = await supabase
       .from('reseñas')
       .select('rating')
       .eq('talento_id', talento_id);
@@ -219,24 +218,22 @@ app.post('/api/submit-review', async (req, res) => {
 const { Octokit } = require('@octokit/rest');
 const OpenAI = require('openai');
 
-const octokit = new Octokit({ auth: process.env.GITHUB_TOKEN });
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+const octokit = new Octokit({ auth: GITHUB_TOKEN });
+const openai = new OpenAI({ apiKey: OPENAI_API_KEY });
 
-const owner = process.env.REPO_OWNER;
-const repo = process.env.REPO_NAME;
 const baseBranch = process.env.BASE_BRANCH || 'main';
 const autoPrefix = process.env.AUTO_BRANCH_PREFIX || 'auto-improve';
 
 app.post('/api/improve', async (req, res) => {
-  if (!owner || !repo || !openai.apiKey || !process.env.GITHUB_TOKEN) {
+  if (!REPO_OWNER || !REPO_NAME || !openai.apiKey || !GITHUB_TOKEN) {
     return res.status(500).json({ error: 'Faltan credenciales para GitHub o OpenAI.' });
   }
 
   try {
     // 1. Obtener el contenido del README
-    const { data: file } = await octokit.repos.getContent({
-      owner,
-      repo,
+    const {  file } = await octokit.repos.getContent({
+      owner: REPO_OWNER,
+      repo: REPO_NAME,
       path: 'README.md',
       ref: baseBranch,
     });
@@ -265,23 +262,23 @@ ${content}
 
     // 3. Crear nueva rama
     const branchName = `${autoPrefix}-${Date.now()}`;
-    const { data: refData } = await octokit.git.getRef({
-      owner,
-      repo,
-      ref: `heads/${baseBranch}`,
+    const {  refData } = await octokit.git.getRef({
+      owner: REPO_OWNER,
+      repo: REPO_NAME,
+      ref: \`heads/\${baseBranch}\`,
     });
 
     await octokit.git.createRef({
-      owner,
-      repo,
-      ref: `refs/heads/${branchName}`,
+      owner: REPO_OWNER,
+      repo: REPO_NAME,
+      ref: \`refs/heads/\${branchName}\`,
       sha: refData.object.sha,
     });
 
     // 4. Subir cambios a la nueva rama
     await octokit.repos.createOrUpdateFileContents({
-      owner,
-      repo,
+      owner: REPO_OWNER,
+      repo: REPO_NAME,
       path: 'README.md',
       message: '🤖 Mejora automática generada por IA',
       content: Buffer.from(improved).toString('base64'),
@@ -290,8 +287,8 @@ ${content}
 
     // 5. Crear Pull Request
     const pr = await octokit.pulls.create({
-      owner,
-      repo,
+      owner: REPO_OWNER,
+      repo: REPO_NAME,
       title: '✨ Mejora automática (IA)',
       head: branchName,
       base: baseBranch,
@@ -324,14 +321,53 @@ ${content}
   }
 });
 
+// --- 🔁 Ejecución continua ---
+let autoImproveActive = true;
+
+async function autoImproveLoop() {
+  while (autoImproveActive) {
+    try {
+      console.log("🧠 Iniciando ciclo automático de mejora...");
+
+      // Simula la ejecución del endpoint interno
+      const res = await fetch(\`http://localhost:\${PORT}/api/improve\`, { method: "POST" });
+      const data = await res.json();
+
+      if (data.success) {
+        console.log("✅ Pull Request creado:", data.pull_request);
+      } else {
+        console.warn("⚠️ Falló el intento de mejora:", data.error);
+      }
+    } catch (err) {
+      console.error("❌ Error en el ciclo:", err.message);
+    }
+
+    // Esperar 5 minutos antes del próximo ciclo
+    console.log("🕒 Esperando 5 minutos para el siguiente intento...");
+    await new Promise((resolve) => setTimeout(resolve, 5 * 60 * 1000));
+  }
+}
+
+// Ruta para detener el proceso manualmente
+app.post("/api/stop", (req, res) => {
+  autoImproveActive = false;
+  console.log("🛑 Proceso automático detenido manualmente.");
+  res.json({ success: true, message: "Ciclo de mejora detenido." });
+});
+
+// Inicia el ciclo automáticamente cuando arranca el servidor
+if (process.env.NODE_ENV !== 'test') {
+  autoImproveLoop();
+}
+
 // Ruta raíz
 app.get('/', (req, res) => {
   res.send('🚀 Talento Local Backend conectado correctamente');
 });
 
-// Iniciar servidor
+// Iniciar servidor en el puerto correcto
 app.listen(PORT, () => {
-  console.log(`🚀 Servidor corriendo en puerto ${PORT}`);
-  console.log(`🌍 Disponible en: http://localhost:${PORT}`);
-  console.log(`🔐 Modo: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`🚀 Servidor corriendo en puerto \${PORT}`);
+  console.log(\`🌍 Disponible en: http://localhost:\${PORT}\`);
+  console.log(\`🔐 Modo: \${process.env.NODE_ENV || 'development'}\`);
 });
